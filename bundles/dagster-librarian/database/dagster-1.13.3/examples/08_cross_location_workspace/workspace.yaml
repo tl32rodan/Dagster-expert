@@ -1,0 +1,7 @@
+load_from:
+  - python_module:
+      module_name: lower
+      location_name: lib_lower
+  - python_module:
+      module_name: upper
+      location_name: lib_upper
