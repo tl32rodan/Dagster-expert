@@ -14,8 +14,9 @@ earlier ones.
 | [07](07-cross-location/) | Cross-location dependencies | 30m | Multi-team / multi-library DAGs (incl. Day7 bug case) |
 | [08](08-complex-deps/) | Complex dependency patterns | 90m | Sparse-matrix DAGs (route A vs B) |
 | [09](09-real-flow/) | Real AP characterization flow | 90–120m | Production-shaped DAG: Perl + Python + TCL via Pipes; fine-grain split; incremental rerun via checkpoint |
+| [10](10-branched-flow/) | Branched characterization (corner / lvf / em) | 60–90m | Multiple parallel char branches with different PVTRC sets; cross-branch deps (lvf/em → corner same-step); Style B fan-in |
 
-Total ≈ 8–10 hours of focused practice.
+Total ≈ 9–11 hours of focused practice.
 
 ## House rules
 
