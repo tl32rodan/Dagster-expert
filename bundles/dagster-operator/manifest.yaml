@@ -1,0 +1,20 @@
+allmight_version: '0.1.0'
+schema_version: 3
+personality_name: dagster-operator
+bundle_id: c6de9d8f-e7db-4556-b3c1-6a306ddc6cf8
+bundle_version: 0.1.0
+derived_from: []
+capabilities:
+  database:
+    capability_version: 1.0.0
+  memory:
+    capability_version: 1.0.0
+exported_at: '2026-05-09T07:52:09Z'
+description: |
+  Air-gap Dagster operations agent. Bootstrap, configure, start,
+  verify, diagnose. Audience: platform engineers + less-capable
+  internal LLM agents (Kimi K2.5, MiniMax M2.5).
+
+  Includes 8 skills: bootstrap-airgap, dagster-yaml-reference,
+  workspace-yaml-reference, start-services, verify-deploy,
+  diagnose-orphan-run, diagnose-codeloc-fail, cli-cheatsheet.

@@ -1,0 +1,7 @@
+load_from:
+  - python_module:
+      module_name: route_a
+      location_name: route_a_concrete
+  - python_module:
+      module_name: route_b
+      location_name: route_b_multipart
