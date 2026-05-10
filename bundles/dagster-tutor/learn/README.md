@@ -15,8 +15,9 @@ earlier ones.
 | [08](08-complex-deps/) | Complex dependency patterns | 90m | Sparse-matrix DAGs (route A vs B) |
 | [09](09-real-flow/) | Real AP characterization flow | 90–120m | Production-shaped DAG: Perl + Python + TCL via Pipes; fine-grain split; incremental rerun via checkpoint |
 | [10](10-branched-flow/) | Branched characterization (corner / lvf / em) | 60–90m | Multiple parallel char branches with different PVTRC sets; cross-branch deps (lvf/em → corner same-step); Style B fan-in |
+| [11](11-multi-library/) | Multi-library + UI scaling | 60–90m | Programmatic asset generation per library (`key_prefix`); UI scaling via `group_name`; how 540-asset graphs stay navigable |
 
-Total ≈ 9–11 hours of focused practice.
+Total ≈ 10–12 hours of focused practice.
 
 ## House rules
 

@@ -1,21 +1,18 @@
 allmight_version: '0.1.0'
 schema_version: 3
 personality_name: dagster-tutor
-bundle_id: e48f93c3-486f-4cee-b0ae-03dd3ea8ca96
-bundle_version: 0.3.0
+bundle_id: d978f8df-f75d-4888-8361-62c3030423ee
+bundle_version: 0.4.0
 derived_from: []
 capabilities:
   database:
     capability_version: 1.0.0
   memory:
     capability_version: 1.0.0
-exported_at: '2026-05-10T15:10:39Z'
+exported_at: '2026-05-10T15:38:48Z'
 description: |
-  Progressive Dagster teacher (1.13.3 pinned). 10 lessons —
-  asset / deps & lineage / partitions / runconfig / failures /
-  interrupt-rerun / cross-location / complex-deps /
-  real-flow (production-shaped AP char) / branched-flow
-  (corner / lvf / em with cross-branch same-step deps).
-
-  Includes 2 skills: walkthrough-lesson + smoke-test-lessons.
-  Lessons 09 and 10 each ship _smoke.py end-to-end test drivers.
+  Progressive Dagster teacher (1.13.3 pinned). 11 lessons total —
+  basics (01-08) → real-flow (09) → branched-flow (10) →
+  multi-library + UI scaling (11). All lessons smoke-tested.
+  Includes 1 lesson-learned case study in _inbox/ (validate vs
+  runtime distinction).
