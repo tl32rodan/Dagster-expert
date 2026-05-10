@@ -13,8 +13,9 @@ earlier ones.
 | [06](06-interrupt-rerun/) | Cancel / kill / restart / checkpoint | 60m | Run-level state machine recovery |
 | [07](07-cross-location/) | Cross-location dependencies | 30m | Multi-team / multi-library DAGs (incl. Day7 bug case) |
 | [08](08-complex-deps/) | Complex dependency patterns | 90m | Sparse-matrix DAGs (route A vs B) |
+| [09](09-real-flow/) | Real AP characterization flow | 90–120m | Production-shaped DAG: Perl + Python + TCL via Pipes; fine-grain split; incremental rerun via checkpoint |
 
-Total ≈ 6–8 hours of focused practice.
+Total ≈ 8–10 hours of focused practice.
 
 ## House rules
 

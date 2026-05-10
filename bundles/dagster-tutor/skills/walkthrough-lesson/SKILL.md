@@ -51,7 +51,7 @@ narrate; respect their time.
 Give the **exact** command, with cwd:
 
 ```bash
-cd <PROJECT>/personalities/dagster-tutor/learn/03-partitions
+cd /home/tl32rodan/projects/personal-assistant/personalities/dagster-tutor/learn/03-partitions
 dagster dev -m by_corner
 # open http://127.0.0.1:3000
 ```
