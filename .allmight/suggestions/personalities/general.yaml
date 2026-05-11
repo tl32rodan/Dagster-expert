@@ -1,0 +1,7 @@
+# all-might generated
+name: general
+capabilities:
+- database
+- memory
+scope: 'General-purpose assistance: code questions, research, memory across sessions.'
+keywords: []

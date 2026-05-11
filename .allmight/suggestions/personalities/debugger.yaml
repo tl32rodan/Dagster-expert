@@ -1,0 +1,13 @@
+# all-might generated
+name: debugger
+capabilities:
+- database
+- memory
+scope: Bug triage and root-cause analysis; remembers prior bugs and their fixes.
+keywords:
+- debug
+- debugger
+- bug
+- crash
+- regression
+- incident

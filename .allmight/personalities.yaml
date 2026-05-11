@@ -1,0 +1,15 @@
+personalities:
+- name: dagster-expert
+  capabilities:
+  - database
+  - memory
+  versions:
+    database: 1.0.0
+    memory: 1.0.0
+  # Three All-Might v3 source bundles merged into this v4 personality.
+  # Full lineage and per-source contribution summary in
+  # personalities/dagster-expert/manifest.yaml::derived_from.
+  derived_from:
+  - dagster-operator
+  - dagster-tutor
+  - dagster-librarian

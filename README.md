@@ -10,7 +10,7 @@ Three personalities, each addressing a distinct slice of the
 | Personality | Role | When you'd switch to it |
 |---|---|---|
 | [`dagster-operator`](bundles/dagster-operator/) | Air-gap ops agent | Bootstrapping, configuring, starting, verifying, diagnosing a self-hosted deployment |
-| [`dagster-tutor`](bundles/dagster-tutor/) | Progressive teacher | Learning Dagster from `@asset` up through complex sparse-matrix DAGs (8 lessons, runnable code) |
+| [`dagster-tutor`](bundles/dagster-tutor/) | Progressive teacher | Learning Dagster from `@asset` up through a production-shaped AP characterization flow (11 lessons, runnable code; lesson 09 mixes Perl + Python + TCL via Pipes; lesson 10 models corner/lvf/em branched characterization with cross-branch deps; lesson 11 multi-library + UI scaling) |
 | [`dagster-librarian`](bundles/dagster-librarian/) | Offline API reference | Looking up the right public API without internet (cheatsheet + runnable examples + SMAK-indexable corpus) |
 
 The librarian is special: the operator and tutor **consult it
@@ -87,7 +87,7 @@ Two indices, ~28 vectors total. Takes a few seconds.
               │                           │
       ┌───────▼────────┐         ┌────────▼───────┐
       │ dagster-operator│        │  dagster-tutor │
-      │ (run + diagnose)│        │  (8 lessons)   │
+      │ (run + diagnose)│        │  (11 lessons)  │
       └────────────────┘         └────────────────┘
 ```
 

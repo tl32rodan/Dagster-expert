@@ -1,0 +1,16 @@
+# all-might generated
+name: corpus_keeper
+capabilities:
+- database
+- memory
+scope: Codebase indexer + answerer; monorepos, EDA flows, large repos.
+keywords:
+- codebase
+- search
+- index
+- indexer
+- monorepo
+- eda
+- rag
+- corpus
+- knowledge graph
