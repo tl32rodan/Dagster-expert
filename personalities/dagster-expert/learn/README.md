@@ -16,8 +16,9 @@ earlier ones.
 | [09](09-real-flow/) | Real AP characterization flow | 90–120m | Production-shaped DAG: Perl + Python + TCL via Pipes; fine-grain split; incremental rerun via checkpoint |
 | [10](10-branched-flow/) | Branched characterization (corner / lvf / em) | 60–90m | Multiple parallel char branches with different PVTRC sets; cross-branch deps (lvf/em → corner same-step); Style B fan-in |
 | [11](11-multi-library/) | Multi-library + UI scaling | 60–90m | Programmatic asset generation per library (`key_prefix`); UI scaling via `group_name`; how 540-asset graphs stay navigable |
+| [12](12-scaling/) | Scaling beyond SQLite | 90m | Diagnoses `SQLITE_MAX_VARIABLE_NUMBER` ceiling; compact MultiPartitions refactor (4500→15 assets); Postgres migration; per-library code locations for 100+ libs |
 
-Total ≈ 10–12 hours of focused practice.
+Total ≈ 11–13 hours of focused practice.
 
 ## House rules
 
