@@ -1,0 +1,28 @@
+# SMAK workspace config for the Dagster 1.13.3 librarian corpus.
+# Run /ingest (or `smak ingest --config <this file>`) after edits to rebuild the
+# vector index. SMAK_DATA defaults to a ./store/ dir colocated with this file;
+# the store/ dir is gitignored — it's rebuildable from docs/ + examples/.
+
+env:
+  SMAK_DATA: ./store
+
+indices:
+  - name: cheatsheet
+    description: >-
+      Curated Dagster 1.13.3 reference markdown — public API surface plus every
+      gotcha encountered. Consult this BEFORE generating any Dagster API code
+      from training memory. Pinned at 1.13.3; when 1.14.x ships, add a new
+      sibling workspace `dagster-1.14.x/` rather than mutating these entries.
+    paths:
+      - ./docs
+    uri: $SMAK_DATA/cheatsheet
+
+  - name: examples
+    description: >-
+      Runnable Dagster 1.13.3 Python examples — minimal patterns for assets,
+      deps styles, partitions, run config, retries, cross-location. All
+      smoke-tested under `dagster definitions validate`. Use as ground truth
+      when cheatsheet entries are ambiguous.
+    paths:
+      - ./examples
+    uri: $SMAK_DATA/examples

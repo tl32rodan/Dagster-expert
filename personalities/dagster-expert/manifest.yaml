@@ -1,0 +1,47 @@
+# Bundle manifest for the merged dagster-expert personality.
+# Produced by manual all-for-one merge (not by /one-for-all skill).
+
+allmight_version: "0.1.0"
+schema_version: 4
+name: dagster-expert
+capabilities:
+  - database
+  - memory
+
+# Lineage — three All-Might v3 bundles merged into this one v4 personality.
+# Reference: tl32rodan/dagster-expert@e1ba541 (branch claude/unified-dagster-agent-di7m2)
+derived_from:
+  - id: dagster-operator
+    source: "tl32rodan/dagster-expert:bundles/dagster-operator"
+    commit: "e1ba541"
+    summary: >-
+      Air-gap Dagster ops agent. Bootstrap/run/diagnose self-hosted
+      deployments without internet. Contributed 8 skills (bootstrap-airgap,
+      cli-cheatsheet, dagster-yaml-reference, workspace-yaml-reference,
+      start-services, verify-deploy, diagnose-orphan-run, diagnose-codeloc-fail)
+      and the OPERATOR mode in ROLE.md.
+  - id: dagster-tutor
+    source: "tl32rodan/dagster-expert:bundles/dagster-tutor"
+    commit: "e1ba541"
+    summary: >-
+      Progressive Dagster teacher. Walks learners through 11 lessons (asset
+      basics through multi-library + UI scaling). Contributed 2 skills
+      (walkthrough-lesson, smoke-test-lessons), all 11 lesson dirs under
+      learn/, and the TEACHER mode in ROLE.md.
+  - id: dagster-librarian
+    source: "tl32rodan/dagster-expert:bundles/dagster-librarian"
+    commit: "e1ba541"
+    summary: >-
+      Offline Dagster API reference. 12 cheatsheet entries + 8 runnable
+      examples for Dagster 1.13.3. Contributed the LIBRARIAN mode in
+      ROLE.md, the lookup-api skill, the database/dagster-1.13.3 corpus,
+      and the cross-mode librarian-consult-before-code hard rule.
+
+database_subscriptions:
+  - dagster-1.13.3
+
+# Tracking why this merge happened, for the next maintainer.
+notes:
+  - "Merged 2026-05-11 to deliver a single personality usable by less-capable agents (Minimax M2.5, Kimi K2.5) running on air-gapped TSMC workstations."
+  - "Original three bundles cross-referenced each other; merge rewrote all `personalities/dagster-{librarian,operator,tutor}/...` paths to `personalities/dagster-expert/...`."
+  - "Mode switching is internal to the personality (TEACHER/OPERATOR/LIBRARIAN); declared out loud per request via the Mode Decision Tree at top of ROLE.md."

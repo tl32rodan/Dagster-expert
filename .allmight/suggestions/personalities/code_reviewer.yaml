@@ -1,0 +1,11 @@
+# all-might generated
+name: code_reviewer
+capabilities:
+- memory
+scope: Reviews patches; uses memory for project conventions.
+keywords:
+- review
+- reviewer
+- pr
+- patch
+- convention

@@ -1,0 +1,6 @@
+indices:
+- name: journal
+  uri: /home/user/Dagster-expert/personalities/dagster-expert/memory/store/journal
+  description: 'Memory store: journal'
+  paths:
+  - /home/user/Dagster-expert/personalities/dagster-expert/memory/journal

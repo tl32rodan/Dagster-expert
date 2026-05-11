@@ -1,0 +1,21 @@
+# SMAK vector indices — rebuild via `/ingest`, never commit
+personalities/*/database/*/store/
+personalities/*/memory/store/
+
+# Local memory-history mirror — bookkeeping only
+.allmight/memory-history/
+
+# Standard Python noise
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.eggs/
+*.egg
+build/
+dist/
+.coverage
+htmlcov/

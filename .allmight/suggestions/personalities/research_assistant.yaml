@@ -1,0 +1,12 @@
+# all-might generated
+name: research_assistant
+capabilities:
+- memory
+scope: Long-running research notes, decisions, references; light on code.
+keywords:
+- research
+- notes
+- decision
+- design
+- writing
+- reference
