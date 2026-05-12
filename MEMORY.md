@@ -39,6 +39,14 @@ knowledge.
   agents). Personality instructions are mechanical / checklist-driven
   rather than judgment-based. See
   `personalities/dagster-expert/PRE_FLIGHT_CHECKLIST.md`.
+- **Graph-theory terminology over domain-specific labels** in
+  abstractions: use `parent_of` / `is_root` / `ancestors_of` rather
+  than `corner_of` / `is_corner`. The branch literally named ``corner``
+  keeps its name; the role is ``root``.
+- **Cardinality math first** when scaling: enumerate the total leaf count
+  (branches × steps × cells × PVTs × ...) before committing to a
+  partition / asset design. The math drives the tier-boundary, not the
+  framework's API surface.
 
 ## Active Goals
 

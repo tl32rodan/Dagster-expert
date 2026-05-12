@@ -1,0 +1,6 @@
+2026-05-12T09:58:06+00:00 remember scope=workspace workspace=dagster-expert kind=understanding "Dagster 1.13.3 API gotchas discovered during scale-lib build (11 entries)"
+2026-05-12T09:58:06+00:00 remember scope=workspace workspace=dagster-expert kind=understanding "scale-lib demo architecture: 4-layer dep model + folder-as-asset contract"
+2026-05-12T09:58:06+00:00 remember scope=workspace workspace=dagster-expert kind=lessons_learned "two-tier orchestration: Dagster + LSF for million-leaf workloads"
+2026-05-12T09:58:06+00:00 remember scope=workspace workspace=dagster-expert kind=lessons_learned "centralize Dagster dep facts in one file (4-layer pattern)"
+2026-05-12T09:58:06+00:00 remember scope=workspace workspace=dagster-expert kind=journal "scale-lib design process: 9 pivots from 1-tier finegrain to Tier-1 folder asset"
+2026-05-12T09:58:06+00:00 remember scope=project workspace=- kind=preferences "graph-theory terminology + cardinality-math-first scaling preferences"
