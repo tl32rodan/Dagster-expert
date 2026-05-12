@@ -1,5 +1,5 @@
 load_from:
   - python_module:
       module_name: pipelines
-      location_name: scale_lib
+      location_name: observer_mode
       working_directory: .

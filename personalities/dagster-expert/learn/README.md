@@ -21,8 +21,9 @@ earlier ones.
 | [14](14-schedules/) | Schedules — cron automation | 30m | `ScheduleDefinition` + cron expressions; AssetSelection-driven jobs; execution_timezone gotchas |
 | [15](15-sensors/) | Sensors — event-driven automation | 45m | `@asset_sensor` / `@sensor` / `@run_status_sensor`; cursor for stateful polling; file-watch + run-finished patterns |
 | [16](16-hooks-automaterialize/) | Hooks + auto-materialize | 45m | `@success_hook` / `@failure_hook` for callbacks; `AutoMaterializePolicy.eager()` vs `lazy()`; decision tree for which to use |
+| [17](17-observer-mode/) | Observer-mode Tier 1 | 60m | Phase-1 of two-tier adoption: Tier 1 (Dagster) watches existing AP via `observable_source_asset` + sensor; zero-risk execution record (TSMC AP painpoint #3 solved); precedes step-take-over phase |
 
-Total ≈ 14–16 hours of focused practice.
+Total ≈ 15–17 hours of focused practice.
 
 ## House rules
 

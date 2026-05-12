@@ -15,6 +15,7 @@ from typing import Iterable, Tuple
 from .rules.kit_rln import KitRlnRule
 from .rules.kit_step6 import KitStep6Rule
 from .rules.parent_mirror import ParentMirrorRule
+from .rules.pvt_source import PvtSourceRule
 from .rules.setup_gate import SetupGateRule
 from .rules.step7_follow import Step7FollowRule
 from .rules.step_chain import StepChainRule
@@ -73,6 +74,7 @@ def _default_rules() -> Tuple[DepRule, ...]:
         Step7FollowRule(),
         KitStep6Rule(rln_exempt=True),
         KitRlnRule(),
+        PvtSourceRule(),
     )
 
 
