@@ -123,71 +123,97 @@ def corner_step1(context):
 
 ## Scaling levels — what to do at each scale
 
-### Level 1: small (< 100 assets even uncollapsed)
+> **Calibration anchor**: `demo/scale-lib/` (Brian, 2026-05-12,
+> production-validated) shows that **1 lib × 460 branches × 21
+> steps ≈ 10.6k partition records still fits SQLite**. The
+> triggers below are revised down from an earlier draft that
+> conflated "asset count" (placeholder limit) with "partition
+> record count" (query throughput). See
+> `memory/lessons_learned/_inbox/2026-05-12T140000-tl32rodan-lesson-12-level-calibration.md`
+> for the back-story.
+
+The level triggers below are **OR-conditions** — if any apply, advance.
+
+### Level 1: small
+**Trigger**: < ~1k partition records total, < 999 assets.
+
 Default SQLite + any layout. Lesson 11's per-(lib, branch, step)
 shape is fine for clarity.
 
-### Level 2: medium (100–4,500 assets — Brian's current scale)
-Two options, pick either:
-- **Stay on SQLite, refactor to compact** → 15 assets total, fits 999-limit
-- **Stay on lesson-11 shape, switch to Postgres** → no asset-count limit, easier migration
+### Level 2: medium (most production EDA flows land here)
+**Trigger**: 1k–1M partition records, OR asset count > 999.
 
-**Best**: both. Compact + Postgres = belt-and-suspenders + lowest UI latency.
+Two compounding levers:
+- **Refactor to compact layout** → asset count drops to ≈ `K`
+  (the step-type count). Trivially under SQLite limits.
+- **Switch to Postgres** → no `?`-placeholder ceiling; bulk
+  queries on 100k–1M partition rows are fine.
 
-### Level 3: large (5,000–75,000 assets — 100 libraries)
-Compact alone keeps asset count low (15), BUT partition record
-count balloons (1.5M). Single-location queries on 1.5M rows
-get slow.
+Brian's projected scale (1 lib × 64 branches × 21 steps ≈
+26.8k partition rows per lib, × 6 libs ≈ 160k total) sits
+**comfortably in Level 2** with compact + Postgres.
 
-**Per-library code location** is the right decomposition: one
-gRPC `dagster code-server` process per library. Each loads only
-~15 assets × 1 library's branches/PVTRCs. The webserver
-aggregates lineage across all code locations (Day-7 cross-loc
-pattern).
+### Level 3: large
+**Trigger** (any of):
+- Postgres query latency on partition lookups becomes user-visible
+  (typically > 1M partition rows AND queries hot-path on UI)
+- Per-library failure isolation is required (one library's bad code
+  shouldn't break the others' lineage view)
+- Different teams own different libraries and want independent
+  deploy cadence
+- Need to scale beyond a single Python process's memory budget for
+  asset graph (rare; ~50MB per 1k assets in 1.13.3)
+
+**Per-library code location** decomposition: one gRPC
+`dagster code-server` process per library. Webserver aggregates
+lineage across locations (Day-7 cross-loc pattern).
 
 ```yaml
 # workspace.yaml
 load_from:
   - python_module: { module_name: pipelines, working_directory: ./svt,    location_name: svt }
   - python_module: { module_name: pipelines, working_directory: ./lvt,    location_name: lvt }
-  - python_module: { module_name: pipelines, working_directory: ./ulvt,   location_name: ulvt }
-  # ... 97 more
+  # ... one per library
 ```
 
-Per-library code-server process cost on a 32-core / 64GB host:
-~50 MB RAM idle + ~150 MB during a run. 100 processes = ~15 GB
-idle, well within budget.
+Per-library code-server cost: ~50 MB RAM idle + ~150 MB during
+a run. 100 processes = ~15 GB idle. `multi_location/` demos
+this at 3-library scale.
 
-`multi_location/` demos this with 3 libraries — same shape
-generated programmatically. Add libraries by copying the
-template and appending to `workspace.yaml`.
+**Note**: pure cardinality (even "100 libraries") doesn't trigger
+Level 3 if the partition-record count comes from branch×step×PVT
+not library×branch — single-location compact + Postgres handles
+it. Only advance to Level 3 when the **isolation / latency /
+deploy-cadence** needs are real.
 
-### Level 4: very large (75,000+ assets — 100+ libs × full sweep)
-Multiple Dagster *instances*, not just code locations. Each
-library team gets its own Dagster deployment:
-- Own Postgres DB / schema
-- Own webserver
-- Own `dagster.yaml`
+### Level 4: very large
+**Trigger**: Need separate Dagster *instances* — not just code
+locations — for strict tenant isolation (e.g. internal-vs-external
+team), independent Dagster version pinning, or per-team Postgres
+schema separation.
 
-Coordination via shared filesystem or external orchestrator. Loses
-the unified-graph property — but you gain full tenant isolation.
+Each library/team gets its own Dagster deployment:
+- Own Postgres DB / schema, own webserver, own `dagster.yaml`
+- Coordination via shared filesystem or external orchestrator
 
-Rarely needed in practice unless library teams have strict
-separation requirements.
+Loses unified-graph; gains tenant isolation. Rarely needed.
 
-### Level 5: scrap Dagster as orchestrator (Brian's option c)
-At 1M+ asset declarations or strict latency budgets, Dagster's
-event-log overhead becomes the bottleneck. Use Dagster only as
-a lineage/observability shell; execute via custom agent skill
-that:
-- Builds the dep DAG from a YAML / config file
-- Calls subprocess for each step in dep order
-- Reports completions back to Dagster via Pipes or GraphQL
+### Level 5: re-evaluate the tier cut
+**Trigger**: Tier-1 (Dagster) asset count itself > 1M.
 
-Loses retry/queue/scheduling — agent must reimplement.
+This usually means leaf-level work that should be in **Tier-2**
+(LSF / Slurm / batch scheduler — see lesson 13) is being modeled
+as Dagster partitions instead. Pull the leaves out of Dagster's
+partition store; let Tier-2 handle the fan-out opaquely.
 
-Don't go here until Level 3 has demonstrably failed. The
-maintenance cost is significant.
+Use Dagster only as a lineage / observability shell at the
+higher-cardinality boundary. The `demo/scale-lib/` 4-layer
+architecture is the canonical Tier-1 shape; the Tier-2 inside
+is whatever your batch scheduler runs.
+
+Don't reach for Level 5 until you've confirmed the cardinality
+explosion is structural (not a layout problem) — Levels 2 + 3
+solve most "Dagster is slow" complaints.
 
 ## Postgres migration — the actual steps
 
