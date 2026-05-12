@@ -1,0 +1,13 @@
+load_from:
+  - python_module:
+      module_name: pipelines
+      location_name: svt
+      working_directory: ./svt
+  - python_module:
+      module_name: pipelines
+      location_name: lvt
+      working_directory: ./lvt
+  - python_module:
+      module_name: pipelines
+      location_name: ulvt
+      working_directory: ./ulvt
