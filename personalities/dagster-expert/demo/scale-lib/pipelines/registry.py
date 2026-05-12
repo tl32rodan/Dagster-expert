@@ -74,7 +74,10 @@ def _default_rules() -> Tuple[DepRule, ...]:
         Step7FollowRule(),
         KitStep6Rule(rln_exempt=True),
         KitRlnRule(),
-        PvtSourceRule(),
+        # PvtSourceRule() — intentionally NOT activated. Class kept in
+        # rules/pvt_source.py as a future template. Activate when the
+        # real TSMC PVT spec export point is defined and `pvt_manifest`
+        # source asset is pointed at a real file (currently mock).
     )
 
 
