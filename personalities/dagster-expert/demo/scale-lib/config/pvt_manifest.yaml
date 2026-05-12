@@ -1,0 +1,44 @@
+# Demo PVT manifest — 12 entries; production replaces this with the
+# full 3k+ list. This file is observed by ``pipelines.source_observers``
+# so any edit hashes differently and propagates staleness downstream.
+#
+# Format: free-form; step scripts read what they understand. The Tier-1
+# Dagster layer never reads the body — only hashes the bytes.
+
+pvt_corners:
+  - process: ff
+    voltage: 0.9
+    temperature: 125
+  - process: tt
+    voltage: 0.9
+    temperature: 25
+  - process: ss
+    voltage: 0.9
+    temperature: -40
+  - process: ff
+    voltage: 1.0
+    temperature: 125
+  - process: tt
+    voltage: 1.0
+    temperature: 25
+  - process: ss
+    voltage: 1.0
+    temperature: -40
+  - process: ff
+    voltage: 1.1
+    temperature: 125
+  - process: tt
+    voltage: 1.1
+    temperature: 25
+  - process: ss
+    voltage: 1.1
+    temperature: -40
+  - process: ff
+    voltage: 1.2
+    temperature: 125
+  - process: tt
+    voltage: 1.2
+    temperature: 25
+  - process: ss
+    voltage: 1.2
+    temperature: -40
