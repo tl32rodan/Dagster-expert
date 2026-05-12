@@ -47,7 +47,11 @@ def _build_asset(library: str, step_name: str):
     partitions_def = _partitions_for(spec.kind)
     runner_key = _runner_resource_key(spec.runner)
 
-    deps = [to_asset_dep(library, edge) for edge in DEPS.edges_for(library, step_name)]
+    downstream_keys = frozenset(partitions_def.get_partition_keys())
+    deps = [
+        to_asset_dep(library, edge, downstream_keys=downstream_keys)
+        for edge in DEPS.edges_for(library, step_name)
+    ]
 
     # group_name: per-library, per-step-kind. Used by Dagster UI to
     # color and bucket assets.
