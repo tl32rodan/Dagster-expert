@@ -1,0 +1,7 @@
+name: lib_a
+description: "scale-lib demo standard-cell library"
+
+# Paths are resolved relative to the demo root unless absolute.
+cells_path: config/cells.json
+pvt_manifest_path: config/pvt_manifest.yaml
+output_root: /tmp/dagster-scale-lib

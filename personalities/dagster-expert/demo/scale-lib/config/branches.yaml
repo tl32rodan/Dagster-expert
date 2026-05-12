@@ -1,0 +1,68 @@
+# Variant tree for the demo library.
+# Each entry's `parent` field is the immediate variant-tree parent (the
+# branch this one mirrors when a rule with ParentOfDownstream fires).
+# The `corner` branch is the tree root (parent: null).
+#
+# Family names are descriptive only; structure is encoded purely by
+# `parent`. Tests in tests/spec/test_branch_hierarchy.py pin the
+# expected relationships.
+
+branches:
+
+  # ── family: main ──────────────────────────────────────────────
+  corner:           { family: main,         parent: null }
+
+  # ── family: standard ──────────────────────────────────────────
+  em:               { family: standard,     parent: corner }
+  ht:               { family: standard,     parent: corner }
+  lvf:              { family: standard,     parent: corner }
+  lvf_ht:           { family: standard,     parent: lvf }
+
+  # ── family: aged ──────────────────────────────────────────────
+  mpwda:            { family: aged,         parent: corner }
+  mpwda_aged:       { family: aged,         parent: mpwda }
+  mpwda_lvf:        { family: aged,         parent: mpwda }
+  mpwda_aged_lvf:   { family: aged,         parent: mpwda_aged }
+
+  # ── family: tmsf_corner (TMSF root, mirrors main corner) ──────
+  tmsf_self:        { family: tmsf_corner,  parent: corner }
+  tmsf_self_ht:     { family: tmsf_corner,  parent: tmsf_self }
+  tmsf_self_lvf:    { family: tmsf_corner,  parent: tmsf_self }
+  tmsf_self_lvf_ht: { family: tmsf_corner,  parent: tmsf_self_lvf }
+
+  # ── family: tmsf_base (23 lde + 10 lde_ht; mirror tmsf_self) ──
+  tmsf_lde1:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde2:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde3:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde4:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde5:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde6:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde7:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde8:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde9:        { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde10:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde11:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde12:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde13:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde14:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde15:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde16:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde17:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde18:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde19:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde20:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde21:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde22:       { family: tmsf_base,    parent: tmsf_self }
+  tmsf_lde23:       { family: tmsf_base,    parent: tmsf_self }
+
+  # ── family: tmsf_ht (10 lde_ht; each mirrors the matching lde) ──
+  tmsf_lde1_ht:     { family: tmsf_ht,      parent: tmsf_lde1 }
+  tmsf_lde2_ht:     { family: tmsf_ht,      parent: tmsf_lde2 }
+  tmsf_lde3_ht:     { family: tmsf_ht,      parent: tmsf_lde3 }
+  tmsf_lde4_ht:     { family: tmsf_ht,      parent: tmsf_lde4 }
+  tmsf_lde5_ht:     { family: tmsf_ht,      parent: tmsf_lde5 }
+  tmsf_lde6_ht:     { family: tmsf_ht,      parent: tmsf_lde6 }
+  tmsf_lde7_ht:     { family: tmsf_ht,      parent: tmsf_lde7 }
+  tmsf_lde8_ht:     { family: tmsf_ht,      parent: tmsf_lde8 }
+  tmsf_lde9_ht:     { family: tmsf_ht,      parent: tmsf_lde9 }
+  tmsf_lde10_ht:    { family: tmsf_ht,      parent: tmsf_lde10 }

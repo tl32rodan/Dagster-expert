@@ -1,0 +1,16 @@
+# Demo instance config — SQLite default (cardinality math in
+# cardinality_calc.py shows this is safe at ~1.1k partition records).
+# Postgres stanza is commented; uncomment if you scale beyond the demo
+# or want concurrent writers.
+
+telemetry:
+  enabled: false
+
+# storage:
+#   postgres:
+#     postgres_db:
+#       hostname: localhost
+#       username: dagster
+#       password: dagster
+#       db_name: dagster
+#       port: 5432
