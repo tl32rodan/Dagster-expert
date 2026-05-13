@@ -24,6 +24,8 @@ Optional add-ons (in priority order for AP work):
 - [`18-cross-location-staleness`](18-cross-location-staleness/) (45m) — same as 17 but across code-location boundaries (multi-team / multi-library).
 - [`19-auto-materialize-partitioned`](19-auto-materialize-partitioned/) (60m) — daemon does the per-partition rebuilds automatically; combines 17 + `AutoMaterializePolicy.eager()/lazy()`.
 
+> 中文速查: 17/18/19 共用的 demo 路徑 + 坑點對照表見 [`INCREMENTAL_RERUN_GUIDE_zh.md`](INCREMENTAL_RERUN_GUIDE_zh.md). 公司端 demo 前過一次即可.
+
 After this path, you can re-materialize specific (step, branch)
 combos via the UI or `dagster asset materialize --select
 lib_a/step1 --partition em` from the CLI. That replaces the
