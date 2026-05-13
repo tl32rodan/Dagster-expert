@@ -123,16 +123,27 @@ class _PartitionRuleBackedMapping(PartitionMapping):
 def _static_mapping_from_rule(
     rule: PartitionRule,
     hierarchy: BranchHierarchy | None = None,
+    downstream_keys: frozenset[str] | None = None,
 ) -> StaticPartitionMapping:
     """Pre-compute a StaticPartitionMapping by enumerating every branch.
 
     Built-in StaticPartitionMapping works with Dagster's reconciliation
     and auto-materialize; the custom adapter does not. Since the demo's
     partition set is static (46 branches), enumeration is cheap.
+
+    ``downstream_keys``: restrict the enumeration to those keys that
+    actually exist in the downstream asset's PartitionsDefinition. Required
+    when the downstream uses ``root_branch_partitions`` (1 key) while the
+    upstream uses ``branch_partitions`` (46 keys) — otherwise the emitted
+    mapping references downstream keys outside the downstream partition
+    set and Dagster's validate_partition_mapping rejects with
+    ``ValueError: mapping target partitions not in the downstream partitions definition``.
     """
     h = hierarchy or default_hierarchy()
     upstream_to_downstream: dict[str, set[str]] = defaultdict(set)
     for downstream in h.all_branches():
+        if downstream_keys is not None and downstream not in downstream_keys:
+            continue
         for upstream in rule.resolve(downstream):
             upstream_to_downstream[upstream].add(downstream)
     return StaticPartitionMapping(
@@ -142,8 +153,17 @@ def _static_mapping_from_rule(
     )
 
 
-def to_partition_mapping(rule: PartitionRule) -> PartitionMapping:
+def to_partition_mapping(
+    rule: PartitionRule,
+    *,
+    downstream_keys: frozenset[str] | None = None,
+) -> PartitionMapping:
     """Translate a spec PartitionRule into a Dagster PartitionMapping.
+
+    ``downstream_keys``: if known, restrict the emitted mapping to the
+    downstream asset's actual partition keys. Required for rules whose
+    enumeration spans all branches but whose downstream uses a smaller
+    partition set (e.g. ``root_branch_partitions``).
 
     Strategy:
     * ``SameBranch``      → ``IdentityPartitionMapping`` (built-in).
@@ -162,7 +182,7 @@ def to_partition_mapping(rule: PartitionRule) -> PartitionMapping:
     if isinstance(rule, RootBranch):
         return SpecificPartitionsPartitionMapping(sorted(rule.resolve("any")))
     if isinstance(rule, (ParentOfDownstream, UnionOf)):
-        return _static_mapping_from_rule(rule)
+        return _static_mapping_from_rule(rule, downstream_keys=downstream_keys)
     raise UnsupportedRule(rule)
 
 
@@ -170,7 +190,12 @@ class UnsupportedRule(TypeError):
     pass
 
 
-def to_asset_dep(library: str, edge: DepEdge) -> AssetDep:
+def to_asset_dep(
+    library: str,
+    edge: DepEdge,
+    *,
+    downstream_keys: frozenset[str] | None = None,
+) -> AssetDep:
     """Convert a DepEdge into an ``AssetDep`` for the ``deps=[...]``
     list of an ``@asset`` decorator.
 
@@ -179,12 +204,19 @@ def to_asset_dep(library: str, edge: DepEdge) -> AssetDep:
     the asset body — which matches the folder-as-asset contract
     (Tier 1 doesn't read upstream output content; the runner / script
     fan-outs do).
+
+    ``downstream_keys``: the partition keys of the asset that owns this
+    AssetDep. Forwarded to ``to_partition_mapping`` so the emitted
+    StaticPartitionMapping doesn't reference keys outside the downstream
+    partition set.
     """
     upstream_lib = edge.upstream_library or library
     key = AssetKey([upstream_lib, edge.upstream_step])
     return AssetDep(
         asset=key,
-        partition_mapping=to_partition_mapping(edge.partition_rule),
+        partition_mapping=to_partition_mapping(
+            edge.partition_rule, downstream_keys=downstream_keys,
+        ),
     )
 
 
