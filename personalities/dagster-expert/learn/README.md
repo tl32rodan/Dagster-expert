@@ -1,7 +1,41 @@
 # learn — Dagster progressive lessons
 
-8 hands-on lessons. Work them in order; later lessons build on
-earlier ones.
+16 hands-on lessons. Most readers should NOT do them all — see the
+"Getting Started Path" below if you're an AP engineer new to
+Dagster.
+
+## Getting Started Path — for AP engineers (~3 hours)
+
+Read these in order. You'll cover the core mechanics that make
+the `demo/scale-lib/` reference implementation make sense.
+
+| # | Lesson | Time | Why |
+|---|---|---|---|
+| 1 | [`01-asset-and-materialize`](01-asset-and-materialize/) | 30m | What's an `@asset`? What does "Materialize" do? |
+| 2 | [`02-deps-and-lineage`](02-deps-and-lineage/) | 30m | How does Dagster know A depends on B? |
+| 3 | [`03-partitions`](03-partitions/) | 45m | **The TSMC branch model lives here**: 46 branches = 46 partition keys on one asset. |
+| 4 | [`12-scaling/`](12-scaling/) (just `compact/` subdir) | 60m | **The folder-as-asset pattern in miniature**: 1 asset per step + (lib×branch) as MultiPartitions. This is the architecture `demo/scale-lib/` uses at production scale. |
+| Done | Read `demo/scale-lib/README.md` and `demo/scale-lib/WHAT_IS_REAL.md` | 30m | See the full pattern in context. Skip the rest until you need them. |
+
+Optional: lesson [`06-interrupt-rerun`](06-interrupt-rerun/) (60m)
+if you want to understand how Dagster handles user-initiated
+cancel + restart — relevant for AP's "I changed my mind, rerun
+this step" workflow.
+
+After this path, you can re-materialize specific (step, branch)
+combos via the UI or `dagster asset materialize --select
+lib_a/step1 --partition em` from the CLI. That replaces the
+SOP-driven "rerun guess" with a deterministic operation.
+
+## Full lesson catalog
+
+Lessons below are **deep dives** — read on demand, not as a path:
+
+| # | Topic | Time | What you take away |
+|---|---|---|---|
+| [01](01-asset-and-materialize/) | Asset & materialize | 30m | Smallest possible Dagster loop |
+| [02](02-deps-and-lineage/) | Dependencies & lineage | 30m | What makes Dagster ≠ a job runner |
+| [03](03-partitions/) | Partitions | 45m | The "for-loop" of Dagster |
 
 | # | Topic | Time | What you take away |
 |---|---|---|---|
