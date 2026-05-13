@@ -68,6 +68,23 @@ def estimate(libs: int, branches: int, step_types: int, pvtrcs: int):
     if high_card_assets > SQLITE_NEW:
         print(f"  Both layouts overflow new SQLite — must use Postgres.")
     print(f"  Best practice for your scale: Postgres + compact = both lanes covered.")
+    print()
+
+    # Scaling level (revised triggers per scale-lib calibration)
+    print(f"=== Scaling level (compact + Postgres assumed) ===")
+    if compact_partitions < 1_000:
+        level, action = 1, "any layout + SQLite is fine"
+    elif compact_partitions < 1_000_000:
+        level, action = 2, "compact layout + Postgres (most production EDA flows)"
+    elif compact_partitions < 10_000_000:
+        level, action = 3, ("per-library code locations IF query latency / "
+                            "failure-isolation / deploy-cadence demands it; "
+                            "otherwise single-location compact + Postgres still works")
+    else:
+        level, action = 5, ("re-evaluate tier cut — Tier-1 cardinality this "
+                            "high usually means leaf work should be in "
+                            "Tier-2 (LSF/Slurm) not Dagster partitions")
+    print(f"  Level {level}: {action}")
 
 
 if __name__ == "__main__":
