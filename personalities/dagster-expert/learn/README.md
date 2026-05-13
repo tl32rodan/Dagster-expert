@@ -1,6 +1,6 @@
 # learn — Dagster progressive lessons
 
-16 hands-on lessons. Most readers should NOT do them all — see the
+19 hands-on lessons. Most readers should NOT do them all — see the
 "Getting Started Path" below if you're an AP engineer new to
 Dagster.
 
@@ -17,10 +17,12 @@ the `demo/scale-lib/` reference implementation make sense.
 | 4 | [`12-scaling/`](12-scaling/) (just `compact/` subdir) | 60m | **The folder-as-asset pattern in miniature**: 1 asset per step + (lib×branch) as MultiPartitions. This is the architecture `demo/scale-lib/` uses at production scale. |
 | Done | Read `demo/scale-lib/README.md` and `demo/scale-lib/WHAT_IS_REAL.md` | 30m | See the full pattern in context. Skip the rest until you need them. |
 
-Optional: lesson [`06-interrupt-rerun`](06-interrupt-rerun/) (60m)
-if you want to understand how Dagster handles user-initiated
-cancel + restart — relevant for AP's "I changed my mind, rerun
-this step" workflow.
+Optional add-ons (in priority order for AP work):
+
+- [`06-interrupt-rerun`](06-interrupt-rerun/) (60m) — cancel + restart semantics; relevant for "I changed my mind, rerun this step".
+- [`17-incremental-cross-partition`](17-incremental-cross-partition/) (60m) — when upstream changes ONE partition, only the matching downstream partitions go stale. This is the "incremental change event" promise of the two-tier model.
+- [`18-cross-location-staleness`](18-cross-location-staleness/) (45m) — same as 17 but across code-location boundaries (multi-team / multi-library).
+- [`19-auto-materialize-partitioned`](19-auto-materialize-partitioned/) (60m) — daemon does the per-partition rebuilds automatically; combines 17 + `AutoMaterializePolicy.eager()/lazy()`.
 
 After this path, you can re-materialize specific (step, branch)
 combos via the UI or `dagster asset materialize --select
@@ -30,12 +32,6 @@ SOP-driven "rerun guess" with a deterministic operation.
 ## Full lesson catalog
 
 Lessons below are **deep dives** — read on demand, not as a path:
-
-| # | Topic | Time | What you take away |
-|---|---|---|---|
-| [01](01-asset-and-materialize/) | Asset & materialize | 30m | Smallest possible Dagster loop |
-| [02](02-deps-and-lineage/) | Dependencies & lineage | 30m | What makes Dagster ≠ a job runner |
-| [03](03-partitions/) | Partitions | 45m | The "for-loop" of Dagster |
 
 | # | Topic | Time | What you take away |
 |---|---|---|---|
@@ -55,8 +51,11 @@ Lessons below are **deep dives** — read on demand, not as a path:
 | [14](14-schedules/) | Schedules — cron automation | 30m | `ScheduleDefinition` + cron expressions; AssetSelection-driven jobs; execution_timezone gotchas |
 | [15](15-sensors/) | Sensors — event-driven automation | 45m | `@asset_sensor` / `@sensor` / `@run_status_sensor`; cursor for stateful polling; file-watch + run-finished patterns |
 | [16](16-hooks-automaterialize/) | Hooks + auto-materialize | 45m | `@success_hook` / `@failure_hook` for callbacks; `AutoMaterializePolicy.eager()` vs `lazy()`; decision tree for which to use |
+| [17](17-incremental-cross-partition/) | Cross-partition incremental rerun | 60m | Identity vs StaticPartitionMapping; data_version propagation across partitions; the constant-hash trap |
+| [18](18-cross-location-staleness/) | Cross-location staleness propagation | 45m | Same incremental promise as 17 but across code-location boundaries; the multi-team boundary case |
+| [19](19-auto-materialize-partitioned/) | AutoMaterializePolicy × partition | 60m | Daemon-driven per-partition rebuilds; eager() along critical path, lazy() on reports; what auto-materialize actually evaluates per tick |
 
-Total ≈ 14–16 hours of focused practice.
+Total ≈ 17–19 hours of focused practice.
 
 ## House rules
 
