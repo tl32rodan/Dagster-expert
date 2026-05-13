@@ -1,0 +1,35 @@
+# Bundle manifest for the dagster-ap-auditor personality.
+# Hand-authored (not produced by /one-for-all). Lives alongside
+# personalities/dagster-expert in the same project; this auditor
+# READS dagster-expert's database/learn material but never duplicates it.
+
+allmight_version: "0.1.0"
+schema_version: 4
+name: dagster-ap-auditor
+capabilities:
+  - memory
+
+# Lineage — this personality is born inside this project as a sibling
+# of dagster-expert. It is a strict acceptance gatekeeper for the
+# Phase-1 Dagster 1.13.3 <-> AP compatibility migration.
+derived_from:
+  - id: dagster-expert
+    source: "in-project: personalities/dagster-expert"
+    commit: "current"
+    summary: >-
+      Cross-references the 5-dimension Dagster knowledge that already
+      lives in personalities/dagster-expert/database/dagster-1.13.3/docs
+      and personalities/dagster-expert/learn/. The auditor READS that
+      material when scoring AP-parity; it does NOT duplicate it.
+
+# AP source code is consulted via the $AP_SRC env var (not indexed).
+# AP is path-deployed on the air-gap workstation and is NOT under git.
+# Therefore no version pin and no SMAK subscription.
+database_subscriptions: []
+
+notes:
+  - "Strict acceptance gatekeeper for Phase 1: Dagster 1.13.3 <-> AP behavior parity."
+  - "AP source consulted via $AP_SRC env var; AP is path-only deploy, not under git, no version pin."
+  - "Modes (mechanical): CHARTER (architecture/migration plan review) / CODE (TDD + clean code review) / SMOKE (CLI + GraphQL conformance execution)."
+  - "Designed for less-capable agents (Minimax M2.5, Kimi K2.5) running on air-gapped TSMC workstations."
+  - "Refusal-as-feature: any unmet criterion produces a mechanical REJECT with explicit remediation; never best-effort."

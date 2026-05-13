@@ -22,6 +22,7 @@
 | Personality | Capabilities | Scope | Active focus |
 |-------------|--------------|-------|--------------|
 | dagster-expert | database, memory | Dagster 1.13.3 air-gap: TEACHER (11 lessons) + OPERATOR (bootstrap/diagnose) + LIBRARIAN (offline API lookup); merged from `dagster-operator` + `dagster-tutor` + `dagster-librarian` v3 bundles | *(set by agent via /remember; see `personalities/dagster-expert/STATUS.md`)* |
+| dagster-ap-auditor | memory | Strict Dagster 1.13.3 ↔ AP parity acceptance: CHARTER (architecture/migration review) + CODE (TDD + clean-code review) + SMOKE (CLI + GraphQL conformance execution); AP source via `$AP_SRC`, no SMAK index. | *(set by agent via /remember; see `personalities/dagster-ap-auditor/STATUS.md`)* |
 
 See each personality's `STATUS.md` for richer rolling state
 (active focus, recent topics, open threads). The "Active focus"
