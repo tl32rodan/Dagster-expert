@@ -18,9 +18,15 @@ class DepEdge:
       upstream_step:    the upstream step name (logical, library-relative).
       upstream_library: ``None`` for same library; else the source library.
       partition_rule:   how to resolve upstream partition keys given a
-                        downstream partition key.
+                        downstream partition key. ``None`` means the
+                        upstream is unpartitioned (e.g. an
+                        ``observable_source_asset``); the translator
+                        will omit ``partition_mapping`` on the AssetDep
+                        and let Dagster apply its default (typically
+                        ``AllPartitionMapping`` for unpartitioned
+                        upstream → partitioned downstream).
     """
 
     upstream_step: str
-    partition_rule: PartitionRule
+    partition_rule: Optional[PartitionRule]
     upstream_library: Optional[str] = None

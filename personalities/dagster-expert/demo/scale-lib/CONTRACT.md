@@ -67,6 +67,38 @@ The digest is written into ``<out>/.dagster_meta.json``:
 
 Tier 1's asset body reads this file to produce ``MaterializeResult``.
 
+### Who computes the digest
+
+| Runner mode | Who computes | Why |
+|---|---|---|
+| **Local subprocess** (default in scale-lib) | Dagster asset body, post-run | Local FS stat is fast; no NFS round-trip; simpler. |
+| **LSF / remote** | **Node-side wrapper, before exit** | NFS stat over 50k+ files is 30s–2min per materialization. The LSF wrapper writes ``<out>/.dagster_meta.json`` as its last action; Dagster only reads that JSON. ~1s end-to-end. |
+
+The contract is the same in both cases — the file at
+``<out>/.dagster_meta.json`` is the authoritative version. The
+runner mode just changes who computed it.
+
+For the LSF path, ``pipelines/runners.py`` is the swap point; the
+wrapper script (e.g. ``learn/13-lsf-integration/scripts/python/lsf_submit.py``)
+should call ``digest_folder_manifest()`` itself on the compute
+node before bsub exits. Dagster's asset body becomes:
+
+```python
+@asset(...)
+def my_asset(context) -> MaterializeResult:
+    out_dir = ...
+    subprocess.run(["bsub", "-K", "-J", ..., "lsf_submit.py", ...], check=True)
+    meta = json.loads((out_dir / ".dagster_meta.json").read_text())
+    return MaterializeResult(
+        data_version=DataVersion(meta["data_version"]),
+        metadata={k: v for k, v in meta.items() if k != "data_version"},
+    )
+```
+
+Trust boundary: this requires Dagster to trust the LSF node
+didn't lie about the digest. Same trust as trusting the node ran
+the script at all. Acceptable.
+
 ## Source change events
 
 Two source assets observe input files and propagate staleness:

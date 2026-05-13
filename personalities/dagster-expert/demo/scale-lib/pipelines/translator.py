@@ -210,14 +210,34 @@ def to_asset_dep(
     StaticPartitionMapping doesn't reference keys outside the downstream
     partition set.
     """
-    upstream_lib = edge.upstream_library or library
-    key = AssetKey([upstream_lib, edge.upstream_step])
+    # For source-asset deps (upstream_library=None AND single-part key),
+    # we don't add the library prefix — sources have flat top-level keys
+    # like AssetKey(["pvt_manifest"]). Convention: edge.upstream_library
+    # of None + a step name matching a known source asset means "source".
+    if edge.upstream_library is None and edge.upstream_step in _SOURCE_ASSET_NAMES:
+        key = AssetKey([edge.upstream_step])
+    else:
+        upstream_lib = edge.upstream_library or library
+        key = AssetKey([upstream_lib, edge.upstream_step])
+
+    # partition_rule=None means upstream is unpartitioned (a source).
+    # Omit partition_mapping; Dagster defaults to AllPartitionMapping for
+    # unpartitioned upstream → partitioned downstream, which is what we
+    # want (every partition of downstream observes the source).
+    if edge.partition_rule is None:
+        return AssetDep(asset=key)
+
     return AssetDep(
         asset=key,
         partition_mapping=to_partition_mapping(
             edge.partition_rule, downstream_keys=downstream_keys,
         ),
     )
+
+
+# Source asset names that have flat (single-element) AssetKeys.
+# Defined in pipelines/source_observers.py; keep in sync.
+_SOURCE_ASSET_NAMES = frozenset({"pvt_manifest", "cell_list"})
 
 
 def to_asset_in(
