@@ -1,0 +1,5 @@
+stores:
+  journal:
+    path: /home/user/Dagster-expert/personalities/dagster-ap-auditor/memory/journal
+    store_uri: /home/user/Dagster-expert/personalities/dagster-ap-auditor/memory/store/journal
+reminder_every_turns: 5

@@ -13,3 +13,14 @@ personalities:
   - dagster-operator
   - dagster-tutor
   - dagster-librarian
+- name: dagster-ap-auditor
+  capabilities:
+  - memory
+  versions:
+    memory: 1.0.0
+  # Sibling personality in this project. Strict acceptance gatekeeper
+  # for the Phase-1 Dagster 1.13.3 <-> AP compatibility migration.
+  # Reads dagster-expert's database/learn material, does not duplicate.
+  # See personalities/dagster-ap-auditor/manifest.yaml::derived_from.
+  derived_from:
+  - dagster-expert
