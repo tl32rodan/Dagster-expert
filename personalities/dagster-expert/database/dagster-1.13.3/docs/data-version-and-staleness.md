@@ -130,19 +130,120 @@ Two problems:
 If you're tempted to do this, you actually want Style A
 (function arg) or Style B (read the actual file).
 
+## What reload does — and does NOT — do to staleness
+
+**Mechanical rule**: clicking "Reload" in the UI / restarting
+`dagster dev` **never** flags downstream as stale by itself in
+1.13.3 unless an explicit `code_version` was bumped (see below).
+
+Reload only:
+
+1. Spawns a fresh worker subprocess (or re-imports the module).
+2. Re-reads the asset definitions.
+3. Updates the asset graph the UI displays.
+
+It does **NOT** execute any asset function. Therefore stored
+`data_version`s in the instance store are unchanged after reload.
+
+| Path to stale | Trigger | Asset must have | Reload alone enough? |
+|---|---|---|---|
+| **data_version stale** | Re-materialize upstream so its `_digest(...)` writes a different value into the instance store | `MaterializeResult(data_version=DataVersion(...))` inside the function | ❌ no — must materialize |
+| **code_version stale** | Bump `code_version="N"` → `"N+1"` on the upstream and reload | `@asset(code_version="...")` set **explicitly** | ✅ yes — fires on reload |
+
+### 1.13.3 does NOT auto-derive `code_version` from source
+
+`@asset(code_version=...)` defaults to `None`. Editing the
+function body, docstring, payload, or any other source line does
+NOT change a tracked `code_version` unless you explicitly bump
+the string passed to the decorator. The `dagster/code_version`
+event tag is only written when the parameter is set.
+
+This is opt-in by design — auto-source-hashing would mark
+every comment, rename, or reformat as a logic change and flood
+the UI with false stale flags. The author of the asset decides
+when "logic changed enough to invalidate downstream".
+
+### Walkthrough — data_version path (lesson 02 / 17 pattern)
+
+```
+Initial state after first backfill:
+  raw.stored.data_version   = digest("v1")
+  mid.consumed[raw]         = digest("v1")
+  final.consumed[mid]       = digest(b"mid_of:v1")
+
+1. Edit raw.py: payload = b"...v1"  →  b"...v2"   (source on disk)
+2. Reload                            (webserver reads new code;
+                                      instance store unchanged;
+                                      raw.stored.data_version
+                                      STILL digest("v1");
+                                      NOTHING yellow yet)
+
+3. Materialize raw                   (raw runs; writes
+                                      digest("v2"); now
+                                      mid.consumed[raw] = digest("v1")
+                                      ≠ raw.stored = digest("v2")
+                                      → mid YELLOW;
+                                      final transitively YELLOW)
+
+4. Materialize mid                   (mid runs; final still yellow
+                                      because final.consumed[mid]
+                                      hasn't caught up yet)
+
+5. Materialize final                 (all GREEN)
+```
+
+### Walkthrough — code_version path (lesson 6d pattern)
+
+```
+Initial:  @asset(code_version="1")  on raw
+          mid.consumed[raw].code_version = "1"
+
+1. Edit raw.py: code_version="1"  →  "2"
+2. Reload                            (webserver reads code_version="2";
+                                      mid.consumed[raw].code_version="1"
+                                      ≠ raw.current.code_version="2"
+                                      → mid YELLOW immediately;
+                                      no materialize needed)
+
+3. Materialize the chain — yellow clears.
+```
+
+### Leaf assets never go stale
+
+A leaf asset (no `deps=`, no function-arg upstream, no downstream
+consumer) has no comparator. It only ever shows:
+
+- **Gray** — never materialized for this (partition)
+- **Green** — successfully materialized
+
+There is no yellow `↻` state for a leaf, no matter how the source
+is edited. Stale is a **downstream property**: it requires a
+consumer to compare upstream's stored `data_version` against what
+it last consumed.
+
+To demonstrate staleness, you need a **chain** of at least two
+assets. Lesson 02 (3-asset chain) and lesson 17a (partitioned
+chain) are the cleanest demos.
+
 ## Diagnosing a broken propagation chain
 
-Symptom: edit upstream → re-materialize → downstream-of-downstream
+Symptom: edit upstream → reload → re-materialize upstream → downstream
 stays "fresh".
 
 Check:
-1. UI → middle asset's Materializations tab → did `Data version`
+1. Did you actually re-materialize the **upstream** (not just the
+   downstream)? Reload alone does not move `data_version`; only
+   re-materializing the edited asset does. See "What reload does"
+   above.
+2. Is there a downstream consumer at all? Leaf assets never go
+   yellow (see above).
+3. UI → middle asset's Materializations tab → did `Data version`
    actually change between two consecutive materializations?
-2. If NO → middle asset's hash is computed from constants.
-   That's the bug. Fix by Style A or Style B-with-files.
-3. If YES → propagation is OK; the downstream-of-downstream
-   probably hasn't been re-materialized yet (you only re-ran
-   the middle, not the downstream).
+4. If NO at step 3 → middle asset's hash is computed from
+   constants. That's the bug. Fix by Style A or Style B-with-files.
+5. If YES at step 3 → propagation is OK; the
+   downstream-of-downstream probably hasn't been re-materialized
+   yet (you only re-ran the middle, not the downstream).
 
 ## Related
 

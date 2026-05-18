@@ -177,11 +177,13 @@ painpoint in the two-tier framing (`memory/understanding/why-two-tier.md`):
   Older Dagster versions ship with policies disabled until
   explicitly enabled.
 - **All 4 partitions auto-run when you only changed one
-  upstream** — your `data_version`s are constant-hashes (the
-  bug from lesson 17c). Without proper version propagation,
-  Dagster can't tell which partition is *actually* stale; the
-  EAGER asset's code-version diff propagates to all partitions
-  instead.
+  upstream** — your `data_version`s are constant-hashes (the bug
+  from lesson 17c). Without per-partition `data_version`
+  movement, every partition looks equally stale to the daemon
+  and it fires runs for all of them. This lesson's assets don't
+  set `@asset(code_version=...)`, so the only signal the daemon
+  has is `data_version`. Fix the upstream's hash to fold in the
+  per-partition content (Style A or Style B as in 17a/17c).
 - **Auto-materialize launches THE SAME partition over and over
   in a loop** — your asset's `data_version` is non-deterministic
   (e.g. includes a timestamp). Each materialization records a

@@ -61,15 +61,34 @@ versions are still current.
 > Why: you didn't say "and re-run everything upstream". Dagster's
 > default is to honor your selection.
 
-### Try 2 · Edit `raw_corner`'s payload, then Materialize `final_corner` only
+### Try 2 · Edit `raw_corner`'s payload, reload, then Materialize `raw_corner`
 
-Same thing — Dagster materializes only `final_corner`. But the
-**lineage view now shows `final_corner` as STALE** (yellow dot).
+The full demo of how `data_version` triggers staleness:
 
-> Why: `raw_corner`'s data version changed; `final_corner`'s
-> stored materialization references the OLD version. Dagster
-> can't auto-decide whether you wanted to refresh — but it tells
-> you something is out of date.
+1. Edit `raw_corner` — change `payload = b"corner=ff_125c_v1"` to
+   `payload = b"corner=ff_125c_v2"`.
+2. Click **Reload** in the UI (or restart `dagster dev`).
+   The instance store **still has the old `data_version`**
+   (`digest(v1)`) for `raw_corner`. **Nothing shows stale yet.**
+3. Click **Materialize** on `raw_corner` only.
+   This re-runs the asset; `digest(v2)` is written; instance
+   store now records the new value.
+4. Open the lineage view: **`mid_corner` and `final_corner` are
+   now STALE** (yellow `↻`). Their stored "consumed upstream
+   `data_version`" is `digest(v1)` ≠ the new `digest(v2)`.
+
+> Why "Materialize `final_corner` only" wouldn't work: in Style A,
+> Dagster loads `mid_corner`'s OLD stored bytes via IOManager,
+> `final_corner` recomputes the same output, and no `data_version`
+> moves anywhere.
+>
+> **The trigger for stale is "upstream re-materialized with new
+> data_version", not "source on disk got edited".** This lesson's
+> assets do not set `@asset(code_version=...)`, so the
+> code-version path is disabled — `data_version` is the only
+> route. See
+> [`data-version-and-staleness.md`](../../database/dagster-1.13.3/docs/data-version-and-staleness.md)
+> § "What reload does — and does NOT — do to staleness".
 
 ### Try 3 · Materialize the stale chain
 
