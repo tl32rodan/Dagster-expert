@@ -77,8 +77,12 @@ operational discipline.
 ### Try 1 · Materialize all four corners, then edit one
 
 Edit `by_corner/asset.py` so that the `ss_m40c` branch returns
-different bytes. Reload the code location. The lineage view shows
-`ss_m40c` as stale (yellow); the others stay green.
+different bytes. Reload the code location.
+
+`corner_summary` has no downstream consumer; its UI state is
+only **gray** (never materialized) or **green** (materialized).
+To observe per-partition staleness, use a chain — see lesson
+17a (partitioned upstream → partitioned downstream).
 
 ### Try 2 · Add a fifth corner
 

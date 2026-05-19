@@ -2,7 +2,17 @@
 date: 2026-05-09
 unix_user: tl32rodan
 session: dagster-tutor walkthrough Lesson 03
-status: inbox — pending curator review
+status: curated 2026-05-18 — promoted to data-version-and-staleness.md
+curated_into:
+  - database/dagster-1.13.3/docs/data-version-and-staleness.md (§ "How reload and materialize relate to staleness" + § "Leaf assets")
+  - learn/02-deps-and-lineage/README.md (Try 2 rewritten)
+  - learn/03-partitions/README.md (Try 1 rewritten — leaf-asset case)
+  - learn/17-incremental-cross-partition/README.md + 17a Pitfalls
+  - learn/18-cross-location-staleness/README.md (Pitfalls clarified)
+  - learn/19-auto-materialize-partitioned/README.md (Pitfalls clarified)
+  - learn/INCREMENTAL_RERUN_GUIDE_zh.md (速查表第 2 列 + reload-vs-stale 規則 note)
+  - database/dagster-1.13.3/docs/tags-and-versions.md (removed wrong "auto-hashed from source" claim)
+  - database/dagster-1.13.3/docs/asset-basics.md (code_version annotation strengthened)
 ---
 
 # Leaf assets have no "stale" state

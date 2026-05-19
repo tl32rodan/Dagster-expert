@@ -88,13 +88,16 @@ Demo 流程:
 
 | 症狀 | 多半是 | 怎麼確認 |
 |---|---|---|
-| 改 upstream 一個 partition, downstream **全部** 變 stale | data_version 是常數, code-version 在 propagate | UI Materializations tab 看 `Data version` 欄是否真的變 |
-| 改 upstream, downstream **完全沒** 變 stale | reload 沒生效 / 改的 byte 沒進 hash | 重啟 `dagster dev`; 確認 `payload = ...` 那行真的不同 |
+| 改 upstream 一個 partition, downstream **全部** 變 stale | data_version 是常數 (17c 的 trap), 每個 partition 看起來都一樣不動 | UI Materializations tab 看 `Data version` 欄是否真的隨 partition 變 |
+| 改 upstream + reload, downstream **完全沒** 變 stale | 還沒跑 5 步 drill 的 step 4 (re-materialize upstream) | 跑 step 4 (`dagster asset materialize --select <upstream> --partition <key>`); 確認 `payload = ...` 真的改了 |
 | 19 daemon 不動 | daemon 沒跑 / policy 沒 enable | `dagster dev` log 找 daemon process; UI sidebar 確認 |
 | 19 daemon 一直在重跑同一個 partition | data_version 含 timestamp 等非決定性內容 | grep `time.time()`, `uuid`, `datetime.now()` 等 |
 | 17b 跑不起來, 報 `mapping target partitions not in...` | `StaticPartitionMapping` value list 比 downstream 的 partition keys 多 | filter mapping values 到 downstream 真的有的 keys (PR #7 同一坑) |
 | 18 報 `Error loading base asset job` | `lib_upper` 多放了一個 `AssetSpec` | 確認 `Definitions(assets=...)` 只有自家 asset |
-| 一直見 `code-version stale` 而不是 `data-version stale` | 編輯了 asset function 本身 (連 docstring 都算) | 全部重跑一次 upstream 清掉 code-version stale, 再 demo data-version |
+
+Reload / materialize / stale 三者的關係見
+`database/dagster-1.13.3/docs/data-version-and-staleness.md`
+§ "How reload and materialize relate to staleness".
 
 ## 帶到公司之前的自我檢查
 

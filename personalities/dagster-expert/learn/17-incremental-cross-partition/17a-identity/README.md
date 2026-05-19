@@ -110,17 +110,11 @@ ls -la /tmp/dagster-17a-out/
 
 ## Pitfalls
 
-- **"Stale" but only for one partition, then it disappears on
-  reload** — likely a code-version change rather than a
-  data-version change. Both mark partitions yellow in the UI;
-  check the asset's "Last materialization" tooltip to see which.
-- **All 4 partitions stale after editing one line** — if you
-  changed something `raw_corner` doesn't gate on (e.g. a comment),
-  the recorded `data_version` won't actually change. Stale here
-  is **code-version**-driven, which propagates to all partitions.
-  Re-materializing all of `raw_corner` once will clear the
-  code-version staleness; then you can demo data-version
-  propagation cleanly.
+- **No partition goes yellow after editing raw_corner + reload** —
+  Step 3 (re-materialize one upstream partition) is what writes the
+  new `data_version`. Reload reads the new source; the materialize
+  step updates the instance store value the downstream is compared
+  against.
 - **`mid_corner` shows ALL partitions stale after you only
   materialized one of raw** — make sure `mid_corner` uses
   `deps=[AssetKey("raw_corner")]`, not `deps=[AssetKey(["raw_corner", "..."])]`

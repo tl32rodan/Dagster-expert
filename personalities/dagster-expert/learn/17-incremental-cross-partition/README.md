@@ -95,8 +95,9 @@ static mapping = N:M, broken chain = nothing at all).
   downstream's actual partition keys.
 - **Re-loading code locations doesn't trigger staleness** — only
   re-materializing upstream with a different `data_version` does.
-  Editing the script alone is a *code-version* change, which is
-  visible in the UI tooltip but distinct from data staleness.
+  Reload reads the new source; Step 3 (re-materialize one
+  partition) writes the new `data_version` the downstream is
+  compared against.
 - **Same partition stale across BOTH `mid_corner` and
   `final_corner`** even though you only re-ran `raw_corner` —
   expected. Dagster propagates staleness through the entire

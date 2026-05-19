@@ -148,10 +148,11 @@ backfill.
 
 ## Pitfalls
 
-- **`signoff_report` partition is stale even though
-  `kit_summary`'s same partition is still showing the old
-  data_version** — code locations were not reloaded after the
-  edit. Click "Reload all" in the UI or restart `dagster dev`.
+- **`signoff_report`'s partition stays green after the edit +
+  re-materialize** — `kit_summary` was probably re-materialized
+  before reloading, so it ran the old code: same payload, same
+  `data_version`, nothing to propagate. Order: edit → reload →
+  re-materialize.
 - **`Error loading base asset job`** — see Day-7 trap above.
   Check `lib_upper`'s `Definitions(assets=...)` does not include
   an `AssetSpec` for the upstream.

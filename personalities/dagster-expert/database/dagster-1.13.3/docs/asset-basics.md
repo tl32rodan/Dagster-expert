@@ -81,7 +81,7 @@ load time. Make it a top-level name (`defs = Definitions(...)`).
     key_prefix=["lib_lower"],                # for cross-location organization
     deps=[AssetKey("upstream"), ...],        # Style B deps
     partitions_def=corner_partitions,        # see partitions.md
-    code_version="v1",                       # explicit code version (rare)
+    code_version="v1",                       # opt-in; bumping it on reload flags downstream stale
     retry_policy=RetryPolicy(max_retries=3), # see failures-retries.md
     metadata={...},                          # static metadata (vs MaterializeResult.metadata)
     tags={...},                              # static tags

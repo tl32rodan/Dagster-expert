@@ -61,15 +61,17 @@ versions are still current.
 > Why: you didn't say "and re-run everything upstream". Dagster's
 > default is to honor your selection.
 
-### Try 2 · Edit `raw_corner`'s payload, then Materialize `final_corner` only
+### Try 2 · Edit `raw_corner`'s payload, reload, then Materialize `raw_corner`
 
-Same thing — Dagster materializes only `final_corner`. But the
-**lineage view now shows `final_corner` as STALE** (yellow dot).
-
-> Why: `raw_corner`'s data version changed; `final_corner`'s
-> stored materialization references the OLD version. Dagster
-> can't auto-decide whether you wanted to refresh — but it tells
-> you something is out of date.
+1. Edit `raw_corner` — change `payload = b"corner=ff_125c_v1"`
+   to `payload = b"corner=ff_125c_v2"`.
+2. Click **Reload** in the UI (or restart `dagster dev`).
+3. Click **Materialize** on `raw_corner` only. The instance store
+   now records the new `data_version` for `raw_corner`.
+4. Lineage view: `mid_corner` and `final_corner` are stale
+   (yellow `↻`). Each one's recorded
+   `consumed[upstream].data_version` no longer matches the new
+   stored value.
 
 ### Try 3 · Materialize the stale chain
 

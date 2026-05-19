@@ -13,7 +13,7 @@ has renamed them across versions.
 |---|---|
 | `dagster/data_version` | The user-set or auto-computed `DataVersion` for the asset's output |
 | `dagster/data_version_is_user_provided` | `"true"` if user passed `data_version=DataVersion(...)`, `"false"` if Dagster auto-computed |
-| `dagster/code_version` | The asset function's code version (auto-hashed from source, or `@asset(code_version="...")` if user set) |
+| `dagster/code_version` | The string set on `@asset(code_version="...")`. Absent when the decorator argument is not set (the default). |
 | `dagster/input_data_version/<asset_key>` | Per-input data_version this materialization observed |
 | `dagster/input_event_pointer/<asset_key>` | Storage ID of the input event used |
 
