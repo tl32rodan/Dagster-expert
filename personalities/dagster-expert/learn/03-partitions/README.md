@@ -79,23 +79,10 @@ operational discipline.
 Edit `by_corner/asset.py` so that the `ss_m40c` branch returns
 different bytes. Reload the code location.
 
-**Expected: nothing goes yellow.** `corner_summary` is a **leaf
-asset** — no downstream consumer, so no comparator exists for a
-"stale" check. Leaf assets only ever show:
-
-- **Gray** — never materialized for this partition
-- **Green** — successfully materialized
-
-There is no yellow `↻` state for a leaf, no matter what you do
-to the source. (Even re-materializing won't change that — it just
-writes a new stored `data_version` that no one is consuming.)
-
-To observe per-partition staleness propagation, you need a
-**chain**: a partitioned upstream with a partitioned downstream
-that consumes it. See lesson 17a for the cleanest demo. The
-general rule is in
-[`data-version-and-staleness.md`](../../database/dagster-1.13.3/docs/data-version-and-staleness.md)
-§ "Leaf assets never go stale".
+`corner_summary` has no downstream consumer; its UI state is
+only **gray** (never materialized) or **green** (materialized).
+To observe per-partition staleness, use a chain — see lesson
+17a (partitioned upstream → partitioned downstream).
 
 ### Try 2 · Add a fifth corner
 

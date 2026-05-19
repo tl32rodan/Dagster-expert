@@ -148,17 +148,11 @@ backfill.
 
 ## Pitfalls
 
-- **You did the edit + re-materialize but `signoff_report`'s
-  partition stays green** — most likely you re-materialized
-  `kit_summary` BEFORE reloading the code location, so it ran
-  the old code (same payload → same `data_version` → no stale
-  to propagate). Order matters: edit → **reload first** →
-  re-materialize. This lesson's assets don't set
-  `@asset(code_version=...)`, so the only way to move
-  `data_version` is to run the asset under the new code.
-  See
-  [`data-version-and-staleness.md`](../../database/dagster-1.13.3/docs/data-version-and-staleness.md)
-  § "What reload does — and does NOT — do to staleness".
+- **`signoff_report`'s partition stays green after the edit +
+  re-materialize** — `kit_summary` was probably re-materialized
+  before reloading, so it ran the old code: same payload, same
+  `data_version`, nothing to propagate. Order: edit → reload →
+  re-materialize.
 - **`Error loading base asset job`** — see Day-7 trap above.
   Check `lib_upper`'s `Definitions(assets=...)` does not include
   an `AssetSpec` for the upstream.

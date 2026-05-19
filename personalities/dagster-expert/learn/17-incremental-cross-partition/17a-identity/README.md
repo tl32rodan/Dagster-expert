@@ -110,17 +110,11 @@ ls -la /tmp/dagster-17a-out/
 
 ## Pitfalls
 
-- **Edit raw_corner + reload, but no partition goes yellow** —
-  this is **expected**. In 1.13.3, the only way reload alone
-  can flag stale is if the upstream has an explicit
-  `@asset(code_version="...")` and you bumped it. This lesson's
-  assets do not set `code_version=`, so the only path to stale
-  is `data_version`, and `data_version` only moves when the
-  upstream is **re-materialized**. Complete Step 3 (re-materialize
-  one upstream partition with the new content) and Step 4's stale
-  flag will appear. See
-  [`data-version-and-staleness.md`](../../../database/dagster-1.13.3/docs/data-version-and-staleness.md)
-  § "What reload does — and does NOT — do to staleness".
+- **No partition goes yellow after editing raw_corner + reload** —
+  Step 3 (re-materialize one upstream partition) is what writes the
+  new `data_version`. Reload reads the new source; the materialize
+  step updates the instance store value the downstream is compared
+  against.
 - **`mid_corner` shows ALL partitions stale after you only
   materialized one of raw** — make sure `mid_corner` uses
   `deps=[AssetKey("raw_corner")]`, not `deps=[AssetKey(["raw_corner", "..."])]`

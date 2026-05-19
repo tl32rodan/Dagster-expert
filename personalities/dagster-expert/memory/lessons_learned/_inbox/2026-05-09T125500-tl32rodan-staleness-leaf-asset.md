@@ -4,7 +4,7 @@ unix_user: tl32rodan
 session: dagster-tutor walkthrough Lesson 03
 status: curated 2026-05-18 — promoted to data-version-and-staleness.md
 curated_into:
-  - database/dagster-1.13.3/docs/data-version-and-staleness.md (§ "What reload does" + § "Leaf assets never go stale")
+  - database/dagster-1.13.3/docs/data-version-and-staleness.md (§ "How reload and materialize relate to staleness" + § "Leaf assets")
   - learn/02-deps-and-lineage/README.md (Try 2 rewritten)
   - learn/03-partitions/README.md (Try 1 rewritten — leaf-asset case)
   - learn/17-incremental-cross-partition/README.md + 17a Pitfalls

@@ -89,20 +89,15 @@ Demo 流程:
 | 症狀 | 多半是 | 怎麼確認 |
 |---|---|---|
 | 改 upstream 一個 partition, downstream **全部** 變 stale | data_version 是常數 (17c 的 trap), 每個 partition 看起來都一樣不動 | UI Materializations tab 看 `Data version` 欄是否真的隨 partition 變 |
-| 改 upstream + reload, downstream **完全沒** 變 stale | **還沒 re-materialize upstream** (reload 只是讀新 code, 不會自動觸發 stale) | 跑 5 步 drill 的 step 4 (`dagster asset materialize --select <upstream> --partition <key>`); 確認 `payload = ...` 真的改了 |
+| 改 upstream + reload, downstream **完全沒** 變 stale | 還沒跑 5 步 drill 的 step 4 (re-materialize upstream) | 跑 step 4 (`dagster asset materialize --select <upstream> --partition <key>`); 確認 `payload = ...` 真的改了 |
 | 19 daemon 不動 | daemon 沒跑 / policy 沒 enable | `dagster dev` log 找 daemon process; UI sidebar 確認 |
 | 19 daemon 一直在重跑同一個 partition | data_version 含 timestamp 等非決定性內容 | grep `time.time()`, `uuid`, `datetime.now()` 等 |
 | 17b 跑不起來, 報 `mapping target partitions not in...` | `StaticPartitionMapping` value list 比 downstream 的 partition keys 多 | filter mapping values 到 downstream 真的有的 keys (PR #7 同一坑) |
 | 18 報 `Error loading base asset job` | `lib_upper` 多放了一個 `AssetSpec` | 確認 `Definitions(assets=...)` 只有自家 asset |
 
-> **Reload 與 stale 的關係 (1.13.3 機械規則)**: reload 本身**不會**觸發 stale。
-> stale 只有兩個觸發點:
-> 1. **re-materialize upstream** → 寫入新的 `data_version` → 下游 stale
-> 2. **顯式 bump `@asset(code_version="N")` → `"N+1"` + reload** → 立即 stale, 不用 materialize
->
-> 1.13.3 **不會**自動從 source 算 code_version。本指南涵蓋的 17/18/19 全部都沒設 `code_version=`,
-> 所以下游 stale 的唯一觸發點是 5 步 drill 的 step 4 (`re-materialize upstream`).
-> 詳見 `database/dagster-1.13.3/docs/data-version-and-staleness.md` § "What reload does".
+Reload / materialize / stale 三者的關係見
+`database/dagster-1.13.3/docs/data-version-and-staleness.md`
+§ "How reload and materialize relate to staleness".
 
 ## 帶到公司之前的自我檢查
 

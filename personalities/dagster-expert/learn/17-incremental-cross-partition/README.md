@@ -95,12 +95,9 @@ static mapping = N:M, broken chain = nothing at all).
   downstream's actual partition keys.
 - **Re-loading code locations doesn't trigger staleness** — only
   re-materializing upstream with a different `data_version` does.
-  The sub-labs in lesson 17 do NOT set `@asset(code_version=...)`,
-  so the code-version path is disabled: editing source and
-  reloading by itself leaves everything green until Step 3
-  (re-materialize one upstream partition) runs. See
-  [`data-version-and-staleness.md`](../../database/dagster-1.13.3/docs/data-version-and-staleness.md)
-  § "What reload does — and does NOT — do to staleness".
+  Reload reads the new source; Step 3 (re-materialize one
+  partition) writes the new `data_version` the downstream is
+  compared against.
 - **Same partition stale across BOTH `mid_corner` and
   `final_corner`** even though you only re-ran `raw_corner` —
   expected. Dagster propagates staleness through the entire
