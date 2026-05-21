@@ -118,7 +118,7 @@ Total partition records         : 47,100
 python3 _smoke.py
 ```
 
-預期 < 1 min。最後一行 `SMOKE PASS — 108 successful materializations across 3 libraries.`
+預期 < 1 min (實測 in-process ~5s)。最後一行 `SMOKE PASS — 96 successful materializations across 3 libraries.` (= 3 lib × (1 step0 + 5 step1-branch + 25 chain-step5branch + 1 meta) = 3×32)
 
 ### 3. Dagit (互動式)
 
