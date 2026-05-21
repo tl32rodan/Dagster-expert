@@ -1,0 +1,5 @@
+load_from:
+  - python_module:
+      module_name: pipelines
+      location_name: multi_library_grain
+      working_directory: .

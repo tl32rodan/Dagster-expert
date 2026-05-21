@@ -1,0 +1,21 @@
+# Lesson 20 — production-scale grain (100 lib × 21 step × 46 branch).
+#
+# Cardinality math (see cardinality_calc.py):
+#   ~2,100 assets
+#   ~47,100 partition records
+#
+# Both fit SQLite comfortably (single-writer, low-concurrency reads).
+# Switch to Postgres when concurrent backfills or schedules push write
+# contention past SQLite's lock window.
+
+telemetry:
+  enabled: false
+
+# storage:
+#   postgres:
+#     postgres_db:
+#       hostname: localhost
+#       username: dagster
+#       password: dagster
+#       db_name: dagster
+#       port: 5432

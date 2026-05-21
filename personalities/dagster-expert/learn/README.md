@@ -1,6 +1,6 @@
 # learn — Dagster progressive lessons
 
-19 hands-on lessons. Most readers should NOT do them all — see the
+20 hands-on lessons. Most readers should NOT do them all — see the
 "Getting Started Path" below if you're an AP engineer new to
 Dagster.
 
@@ -23,6 +23,7 @@ Optional add-ons (in priority order for AP work):
 - [`17-incremental-cross-partition`](17-incremental-cross-partition/) (60m) — when upstream changes ONE partition, only the matching downstream partitions go stale. This is the "incremental change event" promise of the two-tier model.
 - [`18-cross-location-staleness`](18-cross-location-staleness/) (45m) — same as 17 but across code-location boundaries (multi-team / multi-library).
 - [`19-auto-materialize-partitioned`](19-auto-materialize-partitioned/) (60m) — daemon does the per-partition rebuilds automatically; combines 17 + `AutoMaterializePolicy.eager()/lazy()`.
+- [`20-multi-library-grain`](20-multi-library-grain/) (90–120m) — production-scale grain: 100 library × 21 step × 46 branch. group_name = library, branch = partition, full parent-mirror PartitionMapping. Bridge from `demo/scale-lib/`'s single-library reference to real-shop multi-library scope.
 
 > 中文速查: 17/18/19 共用的 demo 路徑 + 坑點對照表見 [`INCREMENTAL_RERUN_GUIDE_zh.md`](INCREMENTAL_RERUN_GUIDE_zh.md). 公司端 demo 前過一次即可.
 
@@ -56,8 +57,9 @@ Lessons below are **deep dives** — read on demand, not as a path:
 | [17](17-incremental-cross-partition/) | Cross-partition incremental rerun | 60m | Identity vs StaticPartitionMapping; data_version propagation across partitions; the constant-hash trap |
 | [18](18-cross-location-staleness/) | Cross-location staleness propagation | 45m | Same incremental promise as 17 but across code-location boundaries; the multi-team boundary case |
 | [19](19-auto-materialize-partitioned/) | AutoMaterializePolicy × partition | 60m | Daemon-driven per-partition rebuilds; eager() along critical path, lazy() on reports; what auto-materialize actually evaluates per tick |
+| [20](20-multi-library-grain/) | Multi-library grain (100 lib × 21 step × 46 branch) | 90–120m | New AP-shop design: library=group, step=asset, branch=partition. Full parent-mirror StaticPartitionMapping. ~2.1k assets / ~47k partition records. Bridge target for real AP work (Tier-1 grain only; PVT/cell deferred to fine tier). |
 
-Total ≈ 17–19 hours of focused practice.
+Total ≈ 18–21 hours of focused practice.
 
 ## House rules
 
