@@ -1,16 +1,16 @@
-"""Package entry. Lazily exposes ``defs`` so that ``cardinality_calc.py``
-(which imports ``pipelines.branches`` / ``pipelines.steps`` / ``pipelines.libraries``)
-can run without Dagster installed.
+"""Package entry. Eagerly imports ``defs`` into the module namespace so
+that Dagster's workspace loader (which iterates ``module.__dict__``,
+not ``getattr``) finds the Definitions when ``workspace.yaml`` says
+``module_name: pipelines``.
 
-``dagster dev -m pipelines`` still finds ``defs`` via PEP 562 ``__getattr__``.
+Do NOT switch to PEP 562 ``__getattr__`` lazy loading here — Dagster's
+loader uses ``vars(module)`` / ``module.__dict__`` to scan for
+Definitions / Job / RepositoryDefinition. Lazy attributes are invisible
+to that scan and produce
+``DagsterInvariantViolationError: No Definitions, RepositoryDefinition,
+Job, Pipeline...`` at startup.
 """
 
+from .definitions import defs  # noqa: F401
 
 __all__ = ["defs"]
-
-
-def __getattr__(name):
-    if name == "defs":
-        from .definitions import defs as _defs
-        return _defs
-    raise AttributeError(f"module 'pipelines' has no attribute {name!r}")
