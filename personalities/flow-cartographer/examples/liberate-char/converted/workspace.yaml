@@ -1,0 +1,8 @@
+# Load the single code location. Run dagster commands from this directory
+# (converted/) so `pipelines` and `core` are importable, e.g.:
+#   dagster dev -w workspace.yaml
+#   dagster asset materialize -m pipelines.definitions --select '*'
+load_from:
+  - python_module:
+      module_name: pipelines.definitions
+      working_directory: .

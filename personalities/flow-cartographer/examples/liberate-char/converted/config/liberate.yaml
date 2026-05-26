@@ -1,0 +1,16 @@
+# Layer-0 config: the SINGLE SOURCE OF TRUTH that replaces the hardcoded,
+# duplicated source files in flow-src/. Edit here -> regenerate everything.
+# (voltages are quoted so "0.90" is preserved verbatim, not reformatted to 0.9.)
+flow_name: liberate-char
+
+pvts:
+  tt_25:  { process: "tt", voltage: "0.90", temperature: "25" }
+  ff_125: { process: "ff", voltage: "0.99", temperature: "125" }
+  ss_m40: { process: "ss", voltage: "0.81", temperature: "-40" }
+
+cells:
+  INV:   { pins: "A Y" }
+  BUF:   { pins: "A Y" }
+  NAND2: { pins: "A B Y" }
+
+sections: [2, 3, 4, 5, 6, 7]
