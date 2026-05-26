@@ -169,8 +169,9 @@ the point.
 
 Audit hint: in CI, validate that for each pair of consecutive
 assets, the downstream's data_version actually changes when
-upstream content changes. The `dagster-ap-auditor` personality
-(in this repo) has skills for this kind of acceptance check.
+upstream content changes. The `flow-cartographer` personality
+(in this repo) checks this kind of data_version propagation as
+part of its `verify` tick when converting a flow.
 
 ## What to try next
 

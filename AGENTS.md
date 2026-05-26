@@ -7,19 +7,23 @@ TSMC air-gap workstations. Two personalities co-exist:
 - `dagster-expert` — daily driver. Three internal modes: **TEACHER**
   (11 lessons), **OPERATOR** (bootstrap / diagnose), **LIBRARIAN**
   (offline API lookup).
-- `dagster-ap-auditor` — strict acceptance gatekeeper for the
-  Phase-1 Dagster 1.13.3 ↔ AP compatibility migration. Three internal
-  modes: **CHARTER** (architecture / migration plan review),
-  **CODE** (TDD + clean-code review), **SMOKE** (CLI + GraphQL
-  conformance execution). Reads `dagster-expert`'s
-  `database/dagster-1.13.3/` and `learn/` material; never duplicates.
+- `flow-cartographer` — given any execution flow (`$FLOW_SRC` +
+  `CONVERSION.md`), runs a scheduled **plan → build → verify →
+  reflect** loop that converts it to Dagster 1.13.3 one verified
+  increment at a time, until the charter's success criteria are met.
+  Its first action every session/tick is the Wake SOP (not a
+  trigger-word match). Evolved from the retired `dagster-ap-auditor`
+  acceptance gatekeeper, whose mechanical guardrails survive as the
+  `verify` tick's self-check. Reads `dagster-expert`'s
+  `database/dagster-1.13.3/`, `learn/`, and `demo/scale-lib/` material
+  as ground truth; never duplicates it.
 
 ## Personalities
 
 | Name | Capabilities | Source of truth |
 |---|---|---|
 | dagster-expert | database, memory | `personalities/dagster-expert/ROLE.md` |
-| dagster-ap-auditor | memory | `personalities/dagster-ap-auditor/ROLE.md` |
+| flow-cartographer | memory, schedule | `personalities/flow-cartographer/ROLE.md` |
 
 ## Where the workflow & instructions live
 
@@ -29,20 +33,22 @@ TSMC air-gap workstations. Two personalities co-exist:
 `PRE_FLIGHT_CHECKLIST.md` (7 boxes), per-mode workflows, hard rules,
 tcsh-first shell syntax, per-lesson `DAGSTER_HOME` isolation.
 
-**For Dagster ↔ AP compatibility acceptance:**
-`personalities/dagster-ap-auditor/ROLE.md`. Mode Decision Tree at top
-(CHARTER / CODE / SMOKE), pre-flight pointer to its
-`PRE_FLIGHT_CHECKLIST.md` (8 boxes including `$AP_SRC`), per-mode
-workflows with strict refusal patterns, binary PASS/REJECT verdicts.
+**For converting an execution flow to Dagster:**
+`personalities/flow-cartographer/ROLE.md`. The §0 Wake SOP is the first
+action every session and every scheduled tick — read the handoff
+(`STATUS.md` + `flow-model/_plan.yaml`), re-read ROLE, route to one tick
+loop, run it, write the handoff. Driven by `CONVERSION.md` (the charter)
++ `$FLOW_SRC`, not by trigger words.
 
 The `role-load` hook injects ALL `personalities/*/ROLE.md` files at
-every chat turn, so both ROLEs are in context simultaneously. The
-trigger-word table inside each ROLE decides which personality answers
-a given user message; if the user says "switch to <other>", that's
-the explicit handover.
+every chat turn, so both ROLEs are in context simultaneously.
+`dagster-expert` answers teaching/operating/lookup questions by its
+trigger table; `flow-cartographer` runs the conversion loop. If the
+user says "switch to <other>", that's the explicit handover.
 
 Companion files alongside each `ROLE.md`:
-- `MODE_DECISION_TREE.md` — standalone copy resilient to context drops
+- standalone drift-resilient copy — `dagster-expert`'s
+  `MODE_DECISION_TREE.md`; `flow-cartographer`'s `TICK_GUIDE.md`
 - `PRE_FLIGHT_CHECKLIST.md` — mandatory session boxes
 - `manifest.yaml` — capabilities + `derived_from` lineage
 - `QUICKSTART.{en,zh}.md` — bilingual user-facing intro
@@ -52,9 +58,14 @@ Companion files alongside each `ROLE.md`:
 DAGSTER_HOME), `database/dagster-1.13.3/` (API corpus), `skills/`
 (custom skills), `demo/` (production-shaped reference).
 
-`dagster-ap-auditor` adds: `audits/0N-….md` (5 parity checklists),
-`standards/` (TDD + clean-code rules + refusal templates),
-`smoke/` (CLI + GraphQL conformance rows).
+`flow-cartographer` adds: `CONVERSION.md` (the user-owned charter),
+`flow-model/` (live conversion state: ledger `_plan.yaml`, step nodes,
+`_operations.log`, `_open_questions.yaml`), `skills/{wake,plan-loop,
+build-loop,verify-loop,reflect-loop}/` (the loop SOPs), `scheduled/`
+(the four `am-flow-cartographer-<tick>` task declarations),
+`conversion-coverage/0N-….md` (the 5 behavioral aspects a conversion
+must cover — repurposed from the old audits), `standards/` + `smoke/`
+(verify-tick inputs).
 
 ## Why this `AGENTS.md` is minimal (and hand-curated)
 

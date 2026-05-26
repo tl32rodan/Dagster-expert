@@ -1,0 +1,23 @@
+# Conversion ledger — the authoritative task state for the ralph-loop.
+# Read first / written last every wake. A fresh weak model resumes the
+# whole conversion from this file alone. Schema: _schema/increment.yaml.
+#
+# Lifecycle: planned -> building -> built -> (verify) -> done | blocked
+# The build tick picks the lowest-id `planned` whose depends_on are all
+# `done`. The verify tick promotes `built` -> `done` or sends -> `blocked`.
+
+flow_name: <set by first plan tick from CONVERSION.md>
+conversion_status: in_progress   # in_progress | met (set when success criteria pass)
+
+increments: []
+# Example (filled by the `plan` tick):
+# - id: a1
+#   title: extract PVT list to config + generator
+#   target_layer: 0
+#   step: liberate_run
+#   converts: "$FLOW_SRC/scripts/char/pvt_list.pl:12-40"
+#   dagster_api: []
+#   accept: "python -m _smoke"
+#   depends_on: []
+#   status: planned
+#   note: "priority: source is pvt_partitionable; do NOT copy, generate"

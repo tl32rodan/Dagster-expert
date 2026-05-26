@@ -22,7 +22,7 @@
 | Personality | Capabilities | Scope | Active focus |
 |-------------|--------------|-------|--------------|
 | dagster-expert | database, memory | Dagster 1.13.3 air-gap: TEACHER (11 lessons) + OPERATOR (bootstrap/diagnose) + LIBRARIAN (offline API lookup); merged from `dagster-operator` + `dagster-tutor` + `dagster-librarian` v3 bundles | *(set by agent via /remember; see `personalities/dagster-expert/STATUS.md`)* |
-| dagster-ap-auditor | memory | Strict Dagster 1.13.3 ↔ AP parity acceptance: CHARTER (architecture/migration review) + CODE (TDD + clean-code review) + SMOKE (CLI + GraphQL conformance execution); AP source via `$AP_SRC`, no SMAK index. | *(set by agent via /remember; see `personalities/dagster-ap-auditor/STATUS.md`)* |
+| flow-cartographer | memory, schedule | Given any execution flow (`$FLOW_SRC` + `CONVERSION.md`), runs a scheduled plan→build→verify→reflect loop that converts it to Dagster 1.13.3 one verified increment at a time. Evolved from the retired `dagster-ap-auditor`; reads dagster-expert's corpus/lessons/demo, never duplicates. | *(set by agent via /remember; see `personalities/flow-cartographer/STATUS.md`)* |
 
 See each personality's `STATUS.md` for richer rolling state
 (active focus, recent topics, open threads). The "Active focus"

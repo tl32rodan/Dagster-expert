@@ -1,0 +1,29 @@
+# Parked ambiguities, verify findings, and charter proposals.
+# The loop writes here instead of guessing — this is how a weak model
+# avoids hallucinating flow behavior or Dagster API.
+
+# Things the loop could not determine and needs the user to answer.
+# An increment that depends on an open question stays `blocked`.
+open_questions: []
+# - id: q1
+#   increment: a2
+#   date: YYYY-MM-DD
+#   question: "Does $FLOW_SRC/lpe.pl fan out per-cell or per-(cell,corner)?"
+#   blocking: true
+
+# Verify-tick findings (one per FAIL). The next build tick fixes these.
+findings: []
+# - increment: a3
+#   date: YYYY-MM-DD
+#   type: not-converted        # invented-api|private-import|smoke-failed|not-converted|uncited|coverage-gap
+#   detail: "pvt_list.pl copied in unchanged; no config+generator"
+#   fix_hint: "express as config/pvt.yaml + generator (L0)"
+
+# Reflect-tick proposals to amend the user-owned charter (never auto-applied).
+charter_proposals: []
+# - date: YYYY-MM-DD
+#   observation: "step signoff is out of conversion scope per smoke results"
+#   suggested_edit: "move signoff_lib to 'out of scope' in CONVERSION.md"
+
+# Unhandled errors from any tick (never swallowed silently).
+errors: []

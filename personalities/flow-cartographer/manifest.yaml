@@ -1,0 +1,50 @@
+# Bundle manifest for the flow-cartographer personality.
+# Hand-authored (not produced by /one-for-all). Lives alongside
+# personalities/dagster-expert in the same project; flow-cartographer
+# READS dagster-expert's database/learn/demo material but never duplicates it.
+
+allmight_version: "0.1.0"
+schema_version: 4
+name: flow-cartographer
+capabilities:
+  - memory
+  - schedule
+
+# Lineage — evolved in-place from the retired `dagster-ap-auditor`
+# (a reactive Dagster<->AP acceptance gatekeeper). The strict gatekeeper
+# identity is retired; its mechanical guardrails (public-API-only, no
+# private imports, smoke-must-run, cite-the-source, journal-every-tick)
+# survive as the `verify` tick's self-check. Generalized from AP-only to
+# "any execution flow", driven by CONVERSION.md instead of trigger words.
+derived_from:
+  - id: dagster-ap-auditor
+    source: "in-project: personalities/dagster-ap-auditor (renamed)"
+    commit: "current"
+    summary: >-
+      Reused: the 5 parity dimensions (now conversion-coverage/), the
+      standards/ (clean-code, tdd, refusal templates) and smoke/
+      conformance rows (now verify-tick inputs), the for-weak-agents
+      idiom (pre-flight boxes, tcsh-first, refusal/park-as-feature).
+      Dropped: the CHARTER/CODE/SMOKE acceptance-gatekeeper modes and
+      binary PASS/REJECT-on-someone-else's-plan framing.
+  - id: dagster-expert
+    source: "in-project: personalities/dagster-expert"
+    commit: "current"
+    summary: >-
+      Read-only ground truth: database/dagster-1.13.3/docs (API corpus),
+      learn/09-real-flow (the real-char shape), demo/scale-lib (the
+      4-layer + folder-as-asset reference). flow-cartographer consults
+      this material when building; it does NOT duplicate or modify it.
+
+# Source flow consulted via the $FLOW_SRC env var (not indexed).
+# Path-deployed, may not be under git; therefore no version pin and no
+# SMAK subscription over it.
+database_subscriptions: []
+
+notes:
+  - "Given any execution flow, runs a scheduled plan -> build -> verify -> reflect loop until CONVERSION.md success criteria are met."
+  - "First action every session/tick is the Wake SOP (skills/wake), not a trigger-word match — fixes the 'doesn't plan first' failure."
+  - "Three standards: task-decomposition (skills/plan-loop), wake SOP (skills/wake), handoff (STATUS.md + flow-model/_plan.yaml)."
+  - "Full-auto, verify-gated: each built increment passes a lightweight self-check before it counts as done."
+  - "Designed for less-capable agents (Minimax M2.5, Kimi K2.5) on air-gapped TSMC workstations."
+  - "Uses the All-Might `schedule` capability (slugs am-flow-cartographer-<tick>); see scheduled/*.md + .opencode/skills/scheduling."

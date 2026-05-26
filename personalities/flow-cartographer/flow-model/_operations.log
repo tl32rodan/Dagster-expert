@@ -1,0 +1,7 @@
+# Append-only audit trail. One line per structural change, every tick.
+# Format: <ISO-ts> <tick> <increment-id|-> <action> <one-line result>
+# If you can't describe what you did in one line, you did too much.
+# Example:
+# 2026-05-26T20:00:00+00:00 plan - bootstrap modeled 7 steps, 9 increments
+# 2026-05-26T20:00:30+00:00 build a1 built L0 config+generator for pvt list
+# 2026-05-26T20:30:00+00:00 verify a1 done smoke green

@@ -13,14 +13,20 @@ personalities:
   - dagster-operator
   - dagster-tutor
   - dagster-librarian
-- name: dagster-ap-auditor
+- name: flow-cartographer
   capabilities:
   - memory
+  - schedule
   versions:
     memory: 1.0.0
-  # Sibling personality in this project. Strict acceptance gatekeeper
-  # for the Phase-1 Dagster 1.13.3 <-> AP compatibility migration.
-  # Reads dagster-expert's database/learn material, does not duplicate.
-  # See personalities/dagster-ap-auditor/manifest.yaml::derived_from.
+    schedule: 1.0.0
+  # Evolved in-place from the retired `dagster-ap-auditor` (a reactive
+  # Dagster<->AP acceptance gatekeeper). Now: given any execution flow,
+  # runs a scheduled plan->build->verify->reflect loop until CONVERSION.md
+  # success criteria are met. The gatekeeper's mechanical guardrails
+  # survive as the `verify` tick's self-check. Reads dagster-expert's
+  # database/learn/demo material as ground truth; never duplicates it.
+  # See personalities/flow-cartographer/manifest.yaml::derived_from.
   derived_from:
+  - dagster-ap-auditor
   - dagster-expert
