@@ -19,14 +19,14 @@ Every implementation change must follow this order:
 3. **Refactor.** Clean the impl with the test as a safety net. The
    test still PASSES after the refactor.
 
-**Evidence we accept in CODE-mode:**
+**Evidence the verify tick accepts:**
 
 - The test file and the impl file appear in the same diff, AND
 - The commit log shows the test file committed BEFORE or WITH the
   impl file (use `git log --oneline -- <test-file>` and
   `git log --oneline -- <impl-file>` and compare).
 
-If the test is committed **after** the impl, the diff fails CODE-mode.
+If the test is committed **after** the impl, the diff fails the verify tick.
 
 ## Test file placement (mechanical)
 
@@ -51,7 +51,7 @@ test convention.
 A new test file must contain at least one test that:
 
 1. **Imports the public symbol(s)** the impl exports.
-2. **Sets up an input** representative of the AP behavior under audit.
+2. **Sets up an input** representative of the source-flow behavior under conversion.
 3. **Asserts an output / state / side-effect** that distinguishes
    correct from incorrect impl.
 4. **Would FAIL** if the impl line(s) under review were absent.
@@ -67,7 +67,7 @@ acceptable without a new test **if and only if**:
 2. The commit message says "refactor" (no functional change).
 3. The diff does not introduce a new branch / new public symbol.
 
-The auditor verifies (1) by running the test suite if it's available;
+The verify tick verifies (1) by running the test suite if it's available;
 otherwise it REJECTS with `tdd-rule.refactor-without-test-evidence`.
 
 ## Test-double rules
@@ -96,7 +96,7 @@ Refusal language refers to these IDs:
 
 ## Output format
 
-When CODE-mode emits a TDD finding, use this exact shape (per
+When the verify tick emits a TDD finding, use this exact shape (per
 `standards/refusal-patterns.md`):
 
 ```
@@ -106,5 +106,5 @@ REJECT: <rule-id>:
   Source: personalities/flow-cartographer/standards/tdd-rules.md §<section>
 ```
 
-The auditor groups all TDD findings into a single block, then
+The verify tick groups all TDD findings into a single block, then
 proceeds to the clean-code scan.

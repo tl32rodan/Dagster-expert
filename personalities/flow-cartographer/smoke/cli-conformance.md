@@ -1,9 +1,9 @@
 <!-- all-might generated -->
-# CLI conformance — AP CLI ↔ Dagster CLI mapping (skeleton)
+# CLI conformance — source-flow CLI ↔ Dagster CLI mapping (skeleton)
 
-Each row maps an AP CLI verb onto a Dagster 1.13.3 CLI invocation
-and declares per-assertion expectations. The auditor reads one row
-per SMOKE invocation, runs the Dagster command, and diffs against
+Each row maps a source-flow CLI verb onto a Dagster 1.13.3 CLI invocation
+and declares per-assertion expectations. The verify tick reads one row
+per smoke run, runs the Dagster command, and diffs against
 the row.
 
 ## How to read a row
@@ -11,8 +11,8 @@ the row.
 ```
 ## <row-id>: <human title>
 
-**AP verb (cite from $FLOW_SRC):**
-  $FLOW_SRC/<file>:<line>  →  `<ap cli string>`
+**Source-flow verb (cite from $FLOW_SRC):**
+  $FLOW_SRC/<file>:<line>  →  `<source cli string>`
 
 **Dagster command (air-gap, absolute paths):**
   dagster <subcommand> -w /abs/path/to/workspace.yaml ...
@@ -27,17 +27,17 @@ the row.
 **Refusal rule ID on failure:** smoke.assert.<id>
 ```
 
-The rows below are **skeletons** — the AP-verb cells say
+The rows below are **skeletons** — the source-flow-verb cells say
 `$FLOW_SRC/<TBD>` because the curator (Brian) fills them after the
-first AP read pass. Until then, an attempt to run a row REJECTs with
-`smoke.assert.no-row` (no matching AP behavior recorded yet).
+first source-flow read pass. Until then, an attempt to run a row REJECTs with
+`smoke.assert.no-row` (no matching source-flow behavior recorded yet).
 
 ---
 
 ## row-01: terminate a running job
 
-**AP verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
-`<TBD: AP cancel/abort verb>`
+**Source-flow verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
+`<TBD: source-flow cancel/abort verb>`
 
 **Dagster command:**
 ```
@@ -57,14 +57,14 @@ dagster run terminate <RUN_ID>
 **Refusal rule ID on failure:** `smoke.assert.exit-code` /
 `smoke.assert.stdout-shape` / `smoke.assert.wall-time`
 
-**Cross-link:** audit `02-stop-and-rerun.md` C1.
+**Cross-link:** coverage `02-stop-and-rerun.md` C1.
 
 ---
 
 ## row-02: list active schedules
 
-**AP verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
-`<TBD: AP "list schedules" verb>`
+**Source-flow verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
+`<TBD: source-flow "list schedules" verb>`
 
 **Dagster command:**
 ```
@@ -84,14 +84,14 @@ Schedule: .* \[RUNNING|STOPPED\]
 **Refusal rule ID on failure:** `smoke.assert.exit-code` /
 `smoke.assert.stdout-shape`
 
-**Cross-link:** audit `03-job-scheduling.md` C5.
+**Cross-link:** coverage `03-job-scheduling.md` C5.
 
 ---
 
 ## row-03: inspect instance / env status
 
-**AP verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
-`<TBD: AP "instance info" / "status" verb>`
+**Source-flow verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
+`<TBD: source-flow "instance info" / "status" verb>`
 
 **Dagster command:**
 ```
@@ -108,14 +108,14 @@ dagster instance info
 **Refusal rule ID on failure:** `smoke.assert.exit-code` /
 `smoke.assert.stdout-shape`
 
-**Cross-link:** audit `05-logs-and-env-status.md` C6.
+**Cross-link:** coverage `05-logs-and-env-status.md` C6.
 
 ---
 
 ## row-04: instance schema migrate
 
-**AP verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
-`<TBD: AP "schema migrate" verb>`
+**Source-flow verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
+`<TBD: source-flow "schema migrate" verb>`
 
 **Dagster command:**
 ```
@@ -131,10 +131,10 @@ migration needed").
 
 **Refusal rule ID on failure:** `smoke.assert.exit-code`
 
-**Cross-link:** audit `05-logs-and-env-status.md` C4.
+**Cross-link:** coverage `05-logs-and-env-status.md` C4.
 
 **Warning:** this row is destructive on the live event log /
-run-storage schema. The auditor MUST refuse to run row-04 against a
+run-storage schema. The verify tick MUST refuse to run row-04 against a
 production `DAGSTER_HOME` without explicit "yes go ahead"
 confirmation from the user.
 
@@ -142,8 +142,8 @@ confirmation from the user.
 
 ## row-05: daemon liveness probe
 
-**AP verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
-`<TBD: AP daemon liveness/health verb>`
+**Source-flow verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
+`<TBD: source-flow daemon liveness/health verb>`
 
 **Dagster command:**
 ```
@@ -158,14 +158,14 @@ dagster-daemon liveness-check
 
 **Refusal rule ID on failure:** `smoke.assert.exit-code`
 
-**Cross-link:** audit `05-logs-and-env-status.md` C5.
+**Cross-link:** coverage `05-logs-and-env-status.md` C5.
 
 ---
 
 ## row-06: backfill a partition range
 
-**AP verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
-`<TBD: AP backfill verb>`
+**Source-flow verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
+`<TBD: source-flow backfill verb>`
 
 **Dagster command:**
 ```
@@ -184,14 +184,14 @@ dagster asset backfill -w /abs/path/to/workspace.yaml \
 **Refusal rule ID on failure:** `smoke.assert.exit-code` /
 `smoke.assert.stdout-shape`
 
-**Cross-link:** audit `03-job-scheduling.md` C4.
+**Cross-link:** coverage `03-job-scheduling.md` C4.
 
 ---
 
 ## row-07: debug-export a run
 
-**AP verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
-`<TBD: AP run-forensics export verb>`
+**Source-flow verb (cite from $FLOW_SRC):** `$FLOW_SRC/<TBD>:<TBD>` →
+`<TBD: source-flow run-forensics export verb>`
 
 **Dagster command:**
 ```
@@ -206,7 +206,7 @@ dagster debug export <RUN_ID> /tmp/run-<RUN_ID>.gz
 
 **Refusal rule ID on failure:** `smoke.assert.exit-code`
 
-**Cross-link:** audit `05-logs-and-env-status.md` C7.
+**Cross-link:** coverage `05-logs-and-env-status.md` C7.
 
 ---
 
@@ -214,14 +214,14 @@ dagster debug export <RUN_ID> /tmp/run-<RUN_ID>.gz
 
 New rows come from the curator after a case study lands in
 `memory/lessons_learned/_inbox/`. The agent does NOT add rows
-inline during a SMOKE invocation. If a SMOKE request has no matching
+inline during a verify run. If a smoke run has no matching
 row, REJECT with:
 
 ```
 REJECT: smoke.assert.no-row:
-  <ap-verb>: no matching row in smoke/cli-conformance.md
+  <source-flow-verb>: no matching row in smoke/cli-conformance.md
   Remediation: file a case study at
     personalities/flow-cartographer/memory/lessons_learned/_inbox/<ISO>-<unix_user>.md
-    describing the AP verb and a proposed Dagster CLI mapping
+    describing the source-flow verb and a proposed Dagster CLI mapping
   Source: personalities/flow-cartographer/smoke/cli-conformance.md (rows are curator-edit only)
 ```
