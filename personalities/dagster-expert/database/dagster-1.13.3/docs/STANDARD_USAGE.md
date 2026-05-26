@@ -189,7 +189,7 @@ event-based: **schedule ticks, sensor ticks, the run queue, and run monitoring.*
 | Rebuild only what changed | **Sensor** (preferred) | `@sensor` / `@asset_sensor` + `RunRequest` | daemon-driven; dedup via `run_key`; throttle via `minimum_interval_seconds` |
 | Run one/few specific partitions | **CLI** | `dagster asset materialize -w workspace.yaml --select <key> --partition <p>` | targeted; deterministic |
 | Periodic refresh | **Schedule** | `ScheduleDefinition` + cron | daemon must run; mind `execution_timezone` |
-| Hands-off per-partition rebuild | **Auto-materialize** | `AutoMaterializePolicy.eager()` / `.lazy()` | daemon-evaluated; see lessons 16/19 (verify exact API on your install) |
+| Hands-off per-partition rebuild | **Auto-materialize** | `AutoMaterializePolicy.eager()` / `.lazy()` | **deprecated since 1.8** → `AutomationCondition` (not yet in this corpus; `/enrich` before use); daemon-evaluated; see lessons 16/19 |
 | Click to run in the UI | **discouraged** | "Materialize" / "Materialize all" | observe only; see §9b for why |
 
 Avoid wide `dagster job backfill` as routine; prefer sensors that request only the
@@ -266,7 +266,7 @@ telemetry: { enabled: false }
 - PartitionMapping: built-ins only (§3.2); **no custom subclass**.
 - `MultiPartitionsDefinition` **2-dim hard limit** → composite key (see `partitions.md`).
 - `RetryPolicy(max_retries, delay, backoff, jitter)` on `@asset` (see `failures-retries.md`).
-- `AutoMaterializePolicy.eager()` (critical path) vs `.lazy()` (reports) — lessons 16/19.
+- `AutoMaterializePolicy.eager()` (critical path) vs `.lazy()` (reports) — lessons 16/19. **Deprecated since 1.8**; current API is `automation_condition=AutomationCondition.eager()` (not yet in this corpus — `/enrich` before writing it).
 
 > 繁中：knob 分三層：instance（dagster.yaml）、workspace、資產定義。標準值如表。`dagster.yaml`
 > 改完要重啟。partitions_def 要單例、mapping 只用內建、MultiPartitions 上限 2 維。

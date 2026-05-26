@@ -1,0 +1,18 @@
+# run.scr -- complete liberate run script (HARDCODED paths)
+# This is the single script the original flow feeds to `liberate`.
+source /tmp/liberate-char-ref/tool_env.csh
+set_out_dir /tmp/liberate-char-ref/out
+read_main /tmp/liberate-char-ref/main.tcl
+read_cell_list /tmp/liberate-char-ref/Mnpvt_cell_list.tcl
+set_pvts tt_25 ff_125 ss_m40
+set_cells INV BUF NAND2
+read_modelcard tt_25 /tmp/liberate-char-ref/modelcard/model_tt_25.tcl
+read_modelcard ff_125 /tmp/liberate-char-ref/modelcard/model_ff_125.tcl
+read_modelcard ss_m40 /tmp/liberate-char-ref/modelcard/model_ss_m40.tcl
+read_sections tt_25 /tmp/liberate-char-ref/sections/tt_25
+read_sections ff_125 /tmp/liberate-char-ref/sections/ff_125
+read_sections ss_m40 /tmp/liberate-char-ref/sections/ss_m40
+read_netlist INV /tmp/liberate-char-ref/netlist/INV.sp
+read_netlist BUF /tmp/liberate-char-ref/netlist/BUF.sp
+read_netlist NAND2 /tmp/liberate-char-ref/netlist/NAND2.sp
+characterize_all

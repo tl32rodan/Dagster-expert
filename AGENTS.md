@@ -5,7 +5,7 @@ designed for less-capable agents (Minimax M2.5, Kimi K2.5) running on
 TSMC air-gap workstations. Two personalities co-exist:
 
 - `dagster-expert` — daily driver. Three internal modes: **TEACHER**
-  (11 lessons), **OPERATOR** (bootstrap / diagnose), **LIBRARIAN**
+  (20 lessons), **OPERATOR** (bootstrap / diagnose), **LIBRARIAN**
   (offline API lookup).
 - `flow-cartographer` — given any execution flow (`$FLOW_SRC` +
   `CONVERSION.md`), runs a scheduled **plan → build → verify →

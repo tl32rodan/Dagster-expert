@@ -34,7 +34,7 @@ Rule ID: `clean-code.naming`
 
 ## Rule 2 — Single responsibility per function
 
-A function does one thing. The auditor counts "things" by
+A function does one thing. The verify tick counts "things" by
 side-effect class:
 
 - Reads input → 1
@@ -68,7 +68,7 @@ Rule ID: `clean-code.dead-code`
 
 If a diff introduces a "deprecated" alias, a wrapper that "preserves
 the old name", or a fallback branch handling "the old format" —
-**REJECT** unless the commit body cites the AP-side caller that
+**REJECT** unless the commit body cites the source-flow caller that
 still needs the old shape.
 
 Backward-compat is only justified by a real consumer. Imaginary
@@ -100,7 +100,7 @@ return result
 
 Examples of WHY-comments (ACCEPT, if true):
 ```python
-# AP's scheduler emits ticks at second boundaries, so subtracting
+# the source flow's scheduler emits ticks at second boundaries, so subtracting
 # 1ms here prevents off-by-one on the very first tick of a minute.
 deadline = next_tick - timedelta(milliseconds=1)
 ```
@@ -141,7 +141,7 @@ Rule ID: `clean-code.premature-abstraction`
 
 ## Output format
 
-When CODE-mode emits a clean-code finding, use the standard refusal
+When the verify tick emits a clean-code finding, use the standard refusal
 template (see `standards/refusal-patterns.md`):
 
 ```

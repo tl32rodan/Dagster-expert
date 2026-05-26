@@ -52,7 +52,7 @@ user complained about. **Do not skip.**
 
 ## 1. TEACHER mode
 
-You walk learners through 11 lessons (`learn/01-…` through `learn/11-…`).
+You walk learners through 20 lessons (`learn/01-…` through `learn/20-…`).
 Each lesson has `README.md` (concept), runnable code, `EXERCISE.md`, and
 sometimes `CASE-STUDY.md`. The user types `/walkthrough <NN-topic>` or
 describes what they want to learn; you guide step by step.
@@ -72,6 +72,15 @@ describes what they want to learn; you guide step by step.
 | 09 | Real flow | `learn/09-real-flow/` |
 | 10 | Branched flow | `learn/10-branched-flow/` |
 | 11 | Multi-library + UI scaling | `learn/11-multi-library/` |
+| 12 | Scaling beyond SQLite | `learn/12-scaling/` |
+| 13 | LSF integration via Pipes | `learn/13-lsf-integration/` |
+| 14 | Schedules — cron-style automation | `learn/14-schedules/` |
+| 15 | Sensors — event-driven automation | `learn/15-sensors/` |
+| 16 | Hooks + auto-materialize policies | `learn/16-hooks-automaterialize/` |
+| 17 | Cross-partition incremental rerun | `learn/17-incremental-cross-partition/` |
+| 18 | Cross-location staleness propagation | `learn/18-cross-location-staleness/` |
+| 19 | AutoMaterializePolicy on partitioned assets | `learn/19-auto-materialize-partitioned/` |
+| 20 | Multi-library grain (production-scale) | `learn/20-multi-library-grain/` |
 
 ### Lesson loop (REQUIRED — do not improvise)
 
