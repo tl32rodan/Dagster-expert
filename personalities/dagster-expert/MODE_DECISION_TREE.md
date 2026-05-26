@@ -25,6 +25,15 @@ at the top of `ROLE.md::§0`.
 | "what's the API for", "show me an example", "is this still right in 1.13.3", "look up", "/search", "/lookup-api", "signature of", "does X exist" | **LIBRARIAN** |
 | Anything else | ASK: "Is this Teacher (learning), Operator (running platform), or Librarian (API lookup)?" |
 
+## Standard-usage gate (mechanical; overrides within OPERATOR & LIBRARIAN)
+
+If the request contains any of {`run`, `materialize`, `backfill`, `schedule`,
+`sensor`, `trigger`, `parallel`, `concurrent`, `launcher`, `executor`,
+`coordinator`, `partition`, `mapping`, `daemon`, `UI`, `CLI`, `knob`,
+`architecture`, `standard`, `recommended`, "how do I run"}, your **first action**
+is to read `database/dagster-1.13.3/docs/STANDARD_USAGE.md` and answer **only**
+from it (ROLE.md §3 Tier 0). No SMAK, no training memory for these.
+
 ## Mode-to-file map
 
 | Mode | Primary skills | Primary data |
