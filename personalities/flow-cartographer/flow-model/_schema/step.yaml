@@ -1,0 +1,35 @@
+# Schema for one flow step node: flow-model/steps/<step>.yaml
+# Produced by the `plan` tick (skills/plan-loop). One file per step in
+# the source flow at $FLOW_SRC. This is the externalized understanding
+# of the flow — read it before building anything that touches the step.
+
+id: <stable-step-id>          # e.g. liberate_run
+name: <short label>
+order: <int>                  # topological position in the DAG (root = 0)
+
+cmd: <invocation>             # how the flow runs this step
+script: <path under $FLOW_SRC or 'inline'>
+lang: perl | python | tcl | shell | other
+
+inputs:                       # what it consumes
+  - <file/folder + how it's located (glob, env, arg)>
+outputs:                      # what it produces
+  - <file/folder + naming convention>
+
+partition_dims: []            # axes it runs across, graph-theory names
+                              # e.g. [corner, pvt, cell]; mark the root
+pvt_partitionable: false      # CAN its source/invocation split per PVT?
+cell_partitionable: false     # ... per cell?
+
+fanout: <none|per-cell|per-pvt|...>
+fanin:  <none|by-corner-glob|across-corners|...>
+
+sources:                      # config/data files it reads that are
+  - path: <$FLOW_SRC/...>     #   themselves partitionable — candidates
+    partitionable_by: []      #   for the L0 source→config transform
+    note: <e.g. "hardcoded PVT list, lines 12-40">
+
+tier: tier1 | tier2 | undecided   # tier1 = Dagster @asset (folder-as-asset);
+                                  # tier2 = per-step PVT/cell fan-out stays in script
+model: full | partial         # partial ⇒ open question(s) parked about this step
+notes: <free text>

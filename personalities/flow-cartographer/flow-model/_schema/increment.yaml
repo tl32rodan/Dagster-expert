@@ -1,0 +1,15 @@
+# Schema for one conversion increment (a row in flow-model/_plan.yaml).
+# Produced by the `plan` tick; advanced by build/verify. An increment is
+# the SMALLEST unit that can be built, verified, and smoke-run on its own.
+# (Placeholder string values are quoted so this file is valid YAML.)
+
+id: "<short stable id>"            # e.g. a3
+title: "<one line; what gets converted>"
+target_layer: 0                    # 0=L0 config-extraction, 1=spec, 2=rules/registry, 3=translator, 4=asset/factory/runner
+step: "<step-id or - >"            # which flow step this increment serves
+converts: "<$FLOW_SRC/file:lines>" # the exact source it replaces (cite it!)
+dagster_api: []                    # public symbols used; filled at build, checked at verify
+accept: "<command>"                # what verify runs; exit 0 = pass (e.g. python -m _smoke)
+depends_on: []                     # increment ids that must be `done` first (topo order)
+status: planned                    # planned | building | built | verified | blocked | done | obsolete
+note: ""
