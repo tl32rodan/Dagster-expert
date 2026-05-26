@@ -16,23 +16,17 @@ the gap explicitly parked as an open question?
 | 04 | Dependency definition (`@asset` deps, MultiPartitions, Style A/B) | `04-dependency-definition.md` |
 | 05 | Logs & env status (event log, compute logs, pipes, daemon) | `05-logs-and-env-status.md` |
 
-## How the verify tick reads these (translation from the old framing)
+## How the verify tick reads these
 
-The five dimension files still read in the old auditor's vocabulary.
-Apply this mapping when you use them — do NOT treat them as a separate
-audit:
+These are a **coverage checklist**, not a standalone PASS/REJECT audit.
+For the step an increment serves, open the matching `0N-*.md`, run its
+criteria as a checklist, and for each: confirm the Dagster conversion
+preserves the behavior (cite the public API) and mark it **covered**,
+OR record the **gap** in `flow-model/_open_questions.yaml`. An
+unaddressed gap → verify FAIL `coverage-gap`; a gap explicitly parked as
+an open question is acceptable, not a hard reject.
 
-| Old auditor term (in the 0N files) | Read it now as |
-|---|---|
-| `$AP_SRC` | `$FLOW_SRC` (the source flow being converted) |
-| "the migration plan" | the current build increment |
-| PASS / REJECT (binary verdict) | covered / gap (and a gap that is parked in `_open_questions.yaml` is acceptable, not a hard REJECT) |
-| "curator adds criteria rows" | still true — new rows come from a curator commit, never auto-added mid-tick |
-
-So for the step an increment serves, open the matching `0N-*.md`, run
-its criteria as a checklist, and for each: confirm the Dagster
-conversion preserves the behavior (cite the public API), OR record the
-gap as an open question. An unaddressed gap → verify FAIL `coverage-gap`.
+New criteria rows come from a curator commit, never auto-added mid-tick.
 
 ## What carried over unchanged
 
@@ -42,8 +36,3 @@ gap as an open question. An unaddressed gap → verify FAIL `coverage-gap`.
 - **No verbal-only claims.** "should work" → restate as "<flow behavior
   X> maps to <Dagster API Y> because <evidence Z>".
 - **Cardinality-math-first** for any partition/storage choice (C6 in 01).
-
-> Cleanup note (open thread): the 0N-*.md bodies still use the literal
-> `$AP_SRC` / "migration plan" / PASS-REJECT wording. They work as-is via
-> the mapping table above; a later pass can rewrite them in the
-> coverage-check vocabulary directly.

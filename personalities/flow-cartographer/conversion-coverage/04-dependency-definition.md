@@ -1,14 +1,14 @@
 <!-- all-might generated -->
-# Audit: 04 — Dependency Definition
+# Coverage: 04 — Dependency Definition
 
-Scope: AP's job / step / asset dependency model versus Dagster
-1.13.3's `@asset(deps=...)`, `AssetIn`, `AssetKey`, partitioned deps,
-`MultiPartitionsDefinition`, and the Style-A-vs-B implicit-vs-explicit
-dep conventions.
+Scope: the source flow's job / step / asset dependency model versus
+Dagster 1.13.3's `@asset(deps=...)`, `AssetIn`, `AssetKey`, partitioned
+deps, `MultiPartitionsDefinition`, and the Style-A-vs-B
+implicit-vs-explicit dep conventions.
 
-## AP behavior (must cite from $AP_SRC)
+## Flow behavior (must cite from $FLOW_SRC)
 
-Required reading paths (use `grep -rn "<keyword>" $AP_SRC`):
+Required reading paths (use `grep -rn "<keyword>" $FLOW_SRC`):
 - Job / pipeline definition module (search `dependency`, `deps`,
   `parent`, `upstream`, `downstream`)
 - Fan-in / fan-out logic (search `fan_in`, `merge`, `collect`,
@@ -18,15 +18,15 @@ Required reading paths (use `grep -rn "<keyword>" $AP_SRC`):
 - Data-passing convention (search `pass`, `arg`, `input`, `output`,
   file-based vs in-memory)
 
-Expected behaviors (AP-side, to be confirmed by `$AP_SRC` reading):
+Expected behaviors (flow-side, to be confirmed by `$FLOW_SRC` reading):
 - B1: Each unit-of-work declares upstream deps explicitly (DAG, not
   implicit ordering).
 - B2: Some deps pass data through arguments (in-memory); others pass
   data through the filesystem (tools that write outputs to disk).
-  AP makes this distinction.
+  The flow makes this distinction.
 - B3: Cross-partition deps exist — a downstream unit consumes outputs
   from multiple upstream partitions (fan-in).
-- B4: AP uses graph-theory terminology consistent with MEMORY.md
+- B4: The flow uses graph-theory terminology consistent with MEMORY.md
   user prefs (parent_of / is_root / ancestors_of). The branch named
   `corner` keeps its literal name; its role is `root`.
 
@@ -55,19 +55,19 @@ Public APIs / classes:
 - `context.partition_key.keys_by_dimension` for cross-partition fan-in
   — cite `learn/09-real-flow/README.md`
 
-## Parity criteria (PASS only if ALL true)
+## Coverage criteria (covered only if ALL true)
 
-- [ ] C1: For each AP dep type, the plan picks **Style A** (data
+- [ ] C1: For each flow dep type, the increment picks **Style A** (data
   passed) **or** **Style B** (deps= only, no data pass) and justifies
-  the choice. AP tools that write outputs to disk → Style B.
-- [ ] C2: AP fan-in patterns are mapped onto either
+  the choice. Flow tools that write outputs to disk → Style B.
+- [ ] C2: The flow's fan-in patterns are mapped onto either
   `MultiPartitionsDefinition` (sparse matrix) or
   `context.partition_key.keys_by_dimension` (cross-partition glob),
   with cardinality math shown per MEMORY.md user prefs.
-- [ ] C3: Cross-code-location deps (if AP has multi-location code
+- [ ] C3: Cross-code-location deps (if the flow has multi-location code
   servers) are mapped onto multi-segment `AssetKey(["loc", "key"])`,
   cite `docs/cross-location.md`.
-- [ ] C4: The plan uses graph-theory terminology (`parent_of` /
+- [ ] C4: The increment uses graph-theory terminology (`parent_of` /
   `is_root` / `ancestors_of`) for the abstraction layer per MEMORY.md
   user prefs. Domain labels like `corner_of` / `is_corner` are
   rejected in the abstraction; the literal branch name `corner` may
@@ -78,34 +78,41 @@ Public APIs / classes:
 - [ ] C6: No `dagster._core.*` / `_internal.*` / `_private.*` imports
   in any dep declaration. Public API only.
 
-## Refusal triggers (mechanical)
+## Gap triggers (mechanical)
 
-- C1 unmet → `REJECT: 04.C1: dep style (A vs B) not chosen per AP
+Each criterion is **covered** (the increment cites the mapping) or a
+**gap**. An unaddressed gap is a `coverage-gap` finding (verify check 6
+FAILs); a gap explicitly parked in `flow-model/_open_questions.yaml` is
+acceptable, not a hard reject. Each remediation below is how to *cover*
+the criterion — parking it as an open question is the documented
+alternative.
+
+- C1 gap → `coverage-gap 04.C1: dep style (A vs B) not chosen per flow
   dep type. Remediation: cite docs/style-a-vs-b.md and pick a style
-  per AP dep with one-line justification.`
-- C2 unmet → `REJECT: 04.C2: AP fan-in not mapped onto
+  per flow dep with one-line justification.`
+- C2 gap → `coverage-gap 04.C2: flow fan-in not mapped onto
   MultiPartitionsDefinition or keys_by_dimension. Remediation: show
   cardinality math + pick a partition shape.`
-- C3 unmet → `REJECT: 04.C3: cross-location deps not mapped onto
+- C3 gap → `coverage-gap 04.C3: cross-location deps not mapped onto
   multi-segment AssetKey. Remediation: cite docs/cross-location.md
   and rewrite the AssetKey.`
-- C4 unmet → `REJECT: 04.C4: domain terminology used in the
+- C4 gap → `coverage-gap 04.C4: domain terminology used in the
   abstraction. Remediation: rename to parent_of / is_root /
   ancestors_of per MEMORY.md user prefs.`
-- C5 unmet → `REJECT: 04.C5: leaf cardinality not enumerated before
+- C5 gap → `coverage-gap 04.C5: leaf cardinality not enumerated before
   the partition shape. Remediation: list (branches, steps, cells,
   PVTs, …) and compute the product first.`
-- C6 unmet → `REJECT: 04.C6: private Dagster imports in dep
+- C6 gap → `coverage-gap 04.C6: private Dagster imports in dep
   declaration. Remediation: rewrite using public API; if the public
   API is missing, write a case study to memory/lessons_learned/_inbox/.`
 
 ## Evidence template
 
-| Criterion | AP source (path:line) | Dagster reference | Status |
+| Criterion | Flow source (path:line) | Dagster reference | Status |
 |---|---|---|---|
-| C1 | $AP_SRC/... | docs/style-a-vs-b.md::... | PASS / FAIL |
-| C2 | $AP_SRC/... | docs/partitions.md::MultiPartitionsDefinition | PASS / FAIL |
-| C3 | $AP_SRC/... | docs/cross-location.md::... | PASS / FAIL |
-| C4 | (terminology audit) | MEMORY.md::User Preferences | PASS / FAIL |
-| C5 | (cardinality math) | MEMORY.md::User Preferences | PASS / FAIL |
-| C6 | $AP_SRC/... | Shared hard rules §5 in ROLE.md | PASS / FAIL |
+| C1 | $FLOW_SRC/... | docs/style-a-vs-b.md::... | covered / gap |
+| C2 | $FLOW_SRC/... | docs/partitions.md::MultiPartitionsDefinition | covered / gap |
+| C3 | $FLOW_SRC/... | docs/cross-location.md::... | covered / gap |
+| C4 | (terminology check) | MEMORY.md::User Preferences | covered / gap |
+| C5 | (cardinality math) | MEMORY.md::User Preferences | covered / gap |
+| C6 | $FLOW_SRC/... | Shared hard rules §5 in ROLE.md | covered / gap |

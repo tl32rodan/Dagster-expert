@@ -1,14 +1,14 @@
 <!-- all-might generated -->
-# Audit: 05 — Logs & Environment Status
+# Coverage: 05 — Logs & Environment Status
 
-Scope: AP's logging model and environment-health surface versus
-Dagster 1.13.3's event log, compute log manager, structured Pipes
-logging, `dagster instance info` / `dagster instance migrate`, and
-`dagster-daemon liveness-check`.
+Scope: the source flow's logging model and environment-health surface
+versus Dagster 1.13.3's event log, compute log manager, structured
+Pipes logging, `dagster instance info` / `dagster instance migrate`,
+and `dagster-daemon liveness-check`.
 
-## AP behavior (must cite from $AP_SRC)
+## Flow behavior (must cite from $FLOW_SRC)
 
-Required reading paths (use `grep -rn "<keyword>" $AP_SRC`):
+Required reading paths (use `grep -rn "<keyword>" $FLOW_SRC`):
 - Log emit / collect module (search `log`, `logger`, `event`)
 - Compute / step output capture (search `stdout`, `stderr`, `capture`,
   `tee`)
@@ -19,7 +19,7 @@ Required reading paths (use `grep -rn "<keyword>" $AP_SRC`):
 - Env / config surfacing (search `env`, `environ`, `instance`,
   `config`)
 
-Expected behaviors (AP-side, to be confirmed by `$AP_SRC` reading):
+Expected behaviors (flow-side, to be confirmed by `$FLOW_SRC` reading):
 - B1: Step / run events are emitted as structured records (not just
   free-form text) and persisted.
 - B2: stdout / stderr of each step is captured and accessible after
@@ -65,64 +65,71 @@ Public APIs / classes / CLI commands:
 - CLI: `dagster debug export <RUN_ID>` for offline run forensics —
   cite `skills/cli-cheatsheet/SKILL.md`
 
-## Parity criteria (PASS only if ALL true)
+## Coverage criteria (covered only if ALL true)
 
-- [ ] C1: AP structured-event types are mapped onto Dagster event
-  types (`STEP_START`, `STEP_FAILURE`, `STEP_RETRY`, `STEP_SUCCESS`,
-  `RUN_FAILURE`, …) row by row.
-- [ ] C2: AP stdout/stderr capture is mapped onto
+- [ ] C1: The flow's structured-event types are mapped onto Dagster
+  event types (`STEP_START`, `STEP_FAILURE`, `STEP_RETRY`,
+  `STEP_SUCCESS`, `RUN_FAILURE`, …) row by row.
+- [ ] C2: The flow's stdout/stderr capture is mapped onto
   `LocalComputeLogManager` (or another `compute_logs` choice) in
   `dagster.yaml`. Path layout shown.
 - [ ] C3: Structured logging from external scripts is mapped onto
   `dagster_pipes` (`pipes.log.{info,warning,error}` and
-  `pipes.report_asset_materialization`). AP's script wrapper changes
-  are listed.
-- [ ] C4: AP schema migrations are mapped onto `dagster instance
-  migrate`, with the upgrade order documented (which dagster version
-  introduces which migration).
-- [ ] C5: AP liveness probe is mapped onto `dagster-daemon
+  `pipes.report_asset_materialization`). The flow's script wrapper
+  changes are listed.
+- [ ] C4: The flow's schema migrations are mapped onto `dagster
+  instance migrate`, with the upgrade order documented (which dagster
+  version introduces which migration).
+- [ ] C5: The flow's liveness probe is mapped onto `dagster-daemon
   liveness-check` (or an explicit gap), with the exit-code contract
   named.
-- [ ] C6: AP "current env status" inspection verb is mapped onto
-  `dagster instance info`, with the columns/fields shown in the
+- [ ] C6: The flow's "current env status" inspection verb is mapped
+  onto `dagster instance info`, with the columns/fields shown in the
   expected output.
 - [ ] C7: A debug-export path is documented for offline forensics
   (`dagster debug export <RUN_ID>` + `dagster-webserver-debug`).
 
-## Refusal triggers (mechanical)
+## Gap triggers (mechanical)
 
-- C1 unmet → `REJECT: 05.C1: AP events not mapped row-by-row onto
-  Dagster event types. Remediation: list each AP event with its
+Each criterion is **covered** (the increment cites the mapping) or a
+**gap**. An unaddressed gap is a `coverage-gap` finding (verify check 6
+FAILs); a gap explicitly parked in `flow-model/_open_questions.yaml` is
+acceptable, not a hard reject. Each remediation below is how to *cover*
+the criterion — parking it as an open question is the documented
+alternative.
+
+- C1 gap → `coverage-gap 05.C1: flow events not mapped row-by-row onto
+  Dagster event types. Remediation: list each flow event with its
   Dagster counterpart, cite learn/05-failures/README.md.`
-- C2 unmet → `REJECT: 05.C2: compute log capture not mapped onto a
+- C2 gap → `coverage-gap 05.C2: compute log capture not mapped onto a
   compute_logs choice. Remediation: cite
   skills/dagster-yaml-reference/SKILL.md::compute_logs and pick a
   manager.`
-- C3 unmet → `REJECT: 05.C3: external-script logging not mapped onto
+- C3 gap → `coverage-gap 05.C3: external-script logging not mapped onto
   dagster_pipes. Remediation: cite learn/09-real-flow/README.md and
-  list the wrapper changes per AP script type.`
-- C4 unmet → `REJECT: 05.C4: AP migrations not mapped onto dagster
+  list the wrapper changes per flow script type.`
+- C4 gap → `coverage-gap 05.C4: flow migrations not mapped onto dagster
   instance migrate. Remediation: cite
   skills/cli-cheatsheet/SKILL.md::instance migrate and document the
   upgrade order.`
-- C5 unmet → `REJECT: 05.C5: AP liveness not mapped onto dagster-daemon
-  liveness-check or not flagged as gap. Remediation: name the exit-code
-  contract and the probe interval.`
-- C6 unmet → `REJECT: 05.C6: env-status inspection verb not mapped
+- C5 gap → `coverage-gap 05.C5: flow liveness not mapped onto
+  dagster-daemon liveness-check or not flagged as gap. Remediation: name
+  the exit-code contract and the probe interval.`
+- C6 gap → `coverage-gap 05.C6: env-status inspection verb not mapped
   onto dagster instance info. Remediation: cite the CLI and list the
   expected output columns.`
-- C7 unmet → `REJECT: 05.C7: no debug-export path documented.
+- C7 gap → `coverage-gap 05.C7: no debug-export path documented.
   Remediation: cite skills/cli-cheatsheet/SKILL.md::debug export and
   dagster-webserver-debug.`
 
 ## Evidence template
 
-| Criterion | AP source (path:line) | Dagster reference | Status |
+| Criterion | Flow source (path:line) | Dagster reference | Status |
 |---|---|---|---|
-| C1 | $AP_SRC/... | learn/05-failures/README.md::event types | PASS / FAIL |
-| C2 | $AP_SRC/... | skills/dagster-yaml-reference/SKILL.md::compute_logs | PASS / FAIL |
-| C3 | $AP_SRC/... | learn/09-real-flow/README.md::dagster_pipes | PASS / FAIL |
-| C4 | $AP_SRC/... | skills/cli-cheatsheet/SKILL.md::instance migrate | PASS / FAIL |
-| C5 | $AP_SRC/... | skills/cli-cheatsheet/SKILL.md::liveness-check | PASS / FAIL |
-| C6 | $AP_SRC/... | skills/cli-cheatsheet/SKILL.md::instance info | PASS / FAIL |
-| C7 | $AP_SRC/... | skills/cli-cheatsheet/SKILL.md::debug export | PASS / FAIL |
+| C1 | $FLOW_SRC/... | learn/05-failures/README.md::event types | covered / gap |
+| C2 | $FLOW_SRC/... | skills/dagster-yaml-reference/SKILL.md::compute_logs | covered / gap |
+| C3 | $FLOW_SRC/... | learn/09-real-flow/README.md::dagster_pipes | covered / gap |
+| C4 | $FLOW_SRC/... | skills/cli-cheatsheet/SKILL.md::instance migrate | covered / gap |
+| C5 | $FLOW_SRC/... | skills/cli-cheatsheet/SKILL.md::liveness-check | covered / gap |
+| C6 | $FLOW_SRC/... | skills/cli-cheatsheet/SKILL.md::instance info | covered / gap |
+| C7 | $FLOW_SRC/... | skills/cli-cheatsheet/SKILL.md::debug export | covered / gap |
