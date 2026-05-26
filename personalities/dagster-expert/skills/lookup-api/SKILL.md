@@ -24,6 +24,15 @@ and ask the user** — don't fabricate.
 
 ## Search order (top to bottom; stop at first answer)
 
+### 0. Standard-usage gate — `database/dagster-1.13.3/docs/STANDARD_USAGE.md`
+
+If the question is about **how to run / operate / structure things** (architecture,
+daemon, schedules/sensors/triggers, UI vs CLI, partitions & partition mapping, run
+launcher / coordinator / executor, concurrency, "which knob", "standard /
+recommended way"), read `STANDARD_USAGE.md` FIRST and answer ONLY from it. Do not
+fall through to SMAK for these. If it's not covered, STOP and offer an `_inbox/`
+case study. The steps below are for raw API-signature lookups only.
+
 ### 1. Cheatsheet — `database/dagster-1.13.3/docs/`
 
 ```bash
@@ -61,6 +70,11 @@ guaranteed to import + load. Use as ground truth when the
 cheatsheet entry is ambiguous.
 
 ### 3. SMAK semantic search (via the v4 `/search` skill)
+
+> **Last-resort only.** SMAK ranking is **non-deterministic** — use it only after
+> the cheatsheet, examples, and `pydoc` (steps 1, 2, 4) all miss, and always verify
+> the hit by reading the file it points to. Never use SMAK for usage/architecture
+> questions (those are gated to `STANDARD_USAGE.md`, step 0).
 
 ```
 /search data version propagation when upstream changes

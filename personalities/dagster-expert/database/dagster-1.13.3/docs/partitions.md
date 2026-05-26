@@ -132,8 +132,17 @@ dagster asset materialize -m mod --select 'group:my_group' --partition ff_125c
 - **Dynamic partition keys not visible after registering** — UI
   may need a code location reload to see new keys; `dagster
   asset list` shows them after the next refresh.
+- **Cross-asset mapping degrades to "all partitions"** — the two
+  assets hold *different* `partitions_def` objects. Define one
+  module-level singleton and import it everywhere. See
+  [`STANDARD_USAGE.md`](STANDARD_USAGE.md) §9a.
+- **Many-to-many cross-asset deps** — do NOT subclass
+  `PartitionMapping`; pre-compute a memoized built-in
+  `StaticPartitionMapping`. See [`STANDARD_USAGE.md`](STANDARD_USAGE.md) §3.2.
 
 ## Related
 
+- The prescribed path for partition mapping & execution:
+  [`STANDARD_USAGE.md`](STANDARD_USAGE.md) §3, §9
 - Examples: [`04_partitioned.py`](../examples/04_partitioned.py),
   [`05_multipartition_2d.py`](../examples/05_multipartition_2d.py)

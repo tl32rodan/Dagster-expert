@@ -99,5 +99,7 @@ This is the operator's job to set up — see
 
 ## Related
 
+- Run queue, concurrency levels & why "Materialize all" looks sequential:
+  [`STANDARD_USAGE.md`](STANDARD_USAGE.md) §8, §9b–c
 - [`asset-basics.md`](asset-basics.md) — `@asset` decorator args
 - Examples: [`07_retry_policy.py`](../examples/07_retry_policy.py)

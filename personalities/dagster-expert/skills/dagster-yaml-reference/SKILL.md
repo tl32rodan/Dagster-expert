@@ -129,6 +129,11 @@ in Postgres, daemon picks them up subject to `max_concurrent_runs`.
 Without this, every queued run starts immediately and you can
 saturate the host.
 
+> This is **level 1** of four concurrency levels. "Materialize all" on an
+> N-partition asset enqueues N separate runs throttled here — NOT parallelized
+> by any custom launcher. See `database/dagster-1.13.3/docs/STANDARD_USAGE.md`
+> §9c. Don't subclass `RunCoordinator`; tune these knobs.
+
 **`telemetry.enabled: false`** — non-negotiable on air-gap.
 
 ## Optional sections

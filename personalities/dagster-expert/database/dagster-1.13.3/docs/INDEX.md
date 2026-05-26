@@ -6,8 +6,14 @@ runnable examples in `../examples/`.
 
 ## Entries
 
+> **START HERE** for any "how do I run / operate / structure things" question.
+> [`STANDARD_USAGE.md`](STANDARD_USAGE.md) is the canonical golden path; the
+> librarian answers usage/architecture questions ONLY from it (no SMAK). The
+> entries below are API-level cheatsheets used for raw signature lookups.
+
 | Topic | File | When you'd ask it |
 |---|---|---|
+| **Standard usage (the ONE prescribed path)** | [`STANDARD_USAGE.md`](STANDARD_USAGE.md) | "what's the standard / recommended way?" / "architecture, daemon, triggers, UI vs CLI, which knob?" |
 | Asset basics: `@asset`, `MaterializeResult`, `DataVersion` | [`asset-basics.md`](asset-basics.md) | "what's the smallest @asset?" / "where do I set data_version?" |
 | Style A vs Style B (deps via fn arg vs explicit) | [`style-a-vs-b.md`](style-a-vs-b.md) | "function arg vs `deps=[]`?" / "how does upstream value reach my asset?" |
 | `data_version` propagation + the constant-hash trap | [`data-version-and-staleness.md`](data-version-and-staleness.md) | "why doesn't downstream go stale when upstream changes?" |

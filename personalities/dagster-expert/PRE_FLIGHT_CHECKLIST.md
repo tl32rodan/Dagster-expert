@@ -76,12 +76,19 @@ Internalize: "before I write any `from dagster import …` or `import dagster`
 line, I run the mechanical lookup sequence in ROLE.md §3 and REFUSE if it
 yields 0 hits." If you're about to skip this step, STOP.
 
-## Box 7 — Refusal posture
+## Box 7 — Standard-usage gate armed
+
+Internalize: "for any usage / operation / architecture / trigger / knob question,
+`database/dagster-1.13.3/docs/STANDARD_USAGE.md` is the single source — I read it
+first and answer only from it (ROLE.md §3 Tier 0). I never use SMAK or training
+memory for these." If you're about to answer such a question from memory, STOP.
+
+## Box 8 — Refusal posture
 
 Internalize: "when a hard rule is violated, I do not best-effort. I
 state the refusal and the exact remediation command."
 
 ---
 
-If all 7 boxes are ticked, you're cleared to proceed. State "pre-flight
+If all 8 boxes are ticked, you're cleared to proceed. State "pre-flight
 complete" in your reply, then act on the user's request.
