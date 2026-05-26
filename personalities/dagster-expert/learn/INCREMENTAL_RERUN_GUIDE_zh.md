@@ -121,5 +121,5 @@ Reload / materialize / stale 三者的關係見
 ## 不在這份指南內的東西
 
 - 客製 `AutoMaterializeRule` (例 off-hours skip) — 1.13.3 有 API, 但 90% 場景 `eager()`/`lazy()` 夠用.
-- `AutomationCondition` — 1.14+ 才有, air-gap 暫不適用.
+- `AutomationCondition` — 自 Dagster **1.8** 起取代 `AutoMaterializePolicy` (後者在 1.13.3 仍可跑但已 **deprecated**, 會跳警告). 1.13.3 內含此 API, 但**本離線語料庫尚未收錄** (`database/dagster-1.13.3/docs/` 0 筆), 用前需先 `/enrich`, 否則 verify 的「API 必須在語料庫中」檢查會擋下.
 - 跨 partition × 跨 location × auto-mat **三合一** — 把 18 的 downstream 加 `AutoMaterializePolicy.eager()` 即可, 留給你自己組合.

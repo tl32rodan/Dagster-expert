@@ -20,6 +20,14 @@ Attach `auto_materialize_policy=...` to an `@asset`. The daemon
 evaluates the policy on each tick (~30s) and **fires a run if
 the policy says yes**.
 
+> **Deprecated API note.** `AutoMaterializePolicy` (below) has been
+> **superseded by `AutomationCondition` since Dagster 1.8**. It still
+> runs in our pinned 1.13.3 but emits a deprecation warning. We teach
+> it here because `AutomationCondition` is **not yet in this offline
+> corpus** — `/enrich` it before writing the modern form
+> (`automation_condition=AutomationCondition.eager()`). See
+> `database/dagster-1.13.3/docs/STANDARD_USAGE.md` §5.
+
 | Policy | Behavior |
 |---|---|
 | `AutoMaterializePolicy.eager()` | Materialize ASAP after upstream is fresh. Reactive. |

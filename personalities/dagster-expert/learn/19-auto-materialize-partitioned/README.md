@@ -203,10 +203,18 @@ painpoint in the two-tier framing (`memory/understanding/why-two-tier.md`):
   `personalities/dagster-expert/database/dagster-1.13.3/docs/`
   if you need to author one. For most production cases
   `eager()` / `lazy()` are enough.
-- **`AutomationCondition`** — newer Dagster (1.14+) replaces
-  `AutoMaterializePolicy` with `AutomationCondition`. We are
-  pinned to 1.13.3 (air-gap), so we use the older API. When
-  TSMC upgrades, the lesson updates.
+- **`AutomationCondition`** — Dagster's declarative-automation API
+  (`automation_condition=AutomationCondition.eager()`) has
+  **superseded `AutoMaterializePolicy` since Dagster 1.8**, and it
+  ships in our pinned 1.13.3 — `AutoMaterializePolicy.eager()/.lazy()`
+  still runs there but is **deprecated** (emits a warning). This
+  lesson keeps the older API only because `AutomationCondition` is
+  **not yet in this offline corpus** (`database/dagster-1.13.3/docs/`,
+  0 hits), so the verify "API must exist in the corpus" check would
+  reject it. To migrate: `/enrich` the corpus with the
+  `AutomationCondition` symbols first, then swap
+  `auto_materialize_policy=AutoMaterializePolicy.eager()` →
+  `automation_condition=AutomationCondition.eager()`.
 - **Sensors that trigger backfills** — covered in lesson 15.
   Auto-materialize is the declarative cousin of sensors for
   the "fresh upstream" trigger.
