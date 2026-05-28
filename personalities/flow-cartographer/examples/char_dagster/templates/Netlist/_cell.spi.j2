@@ -1,0 +1,7 @@
+* Netlist for cell {{ cell }} (trio_group {{ trio_group }}, lpe_rc {{ lpe_rc }})
+* Project: {{ project.name }}
+.subckt {{ cell }} A Y VDD VSS
+* (mock netlist body; the real flow injects extracted parasitics from {{ lpe_rc }})
+M1 Y A VDD VDD pch w=120n l=20n
+M2 Y A VSS VSS nch w=80n  l=20n
+.ends {{ cell }}

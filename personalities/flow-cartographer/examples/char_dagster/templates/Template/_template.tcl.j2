@@ -1,0 +1,8 @@
+# Template TCL for {{ project.name }}{{ pvt.name }} (trio_group {{ trio_group }})
+# Referenced by SECTION/*/char_{{ pvt.name }}.tcl files in the same partition.
+set_var lib            {{ project.name }}
+set_var pvt            {{ pvt.name }}
+set_var voltage        {{ pvt.volt }}
+set_var temperature    {{ pvt.temp }}
+set_var trio_group     {{ trio_group }}
+set_var lpe_rc         {{ lpe_rc }}

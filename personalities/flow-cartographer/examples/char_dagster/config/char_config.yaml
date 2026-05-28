@@ -1,0 +1,33 @@
+# Demo config for char_dagster. The single source of truth that templates
+# read from. Validation rules enforced in char_dagster/config.py.
+
+project:
+  name: MYLIB
+  version: "1.0"
+  lib_type: typical
+
+paths:
+  work_dir:            /work/char
+  generated_dir:       /work/char/generated
+  template_dir:        ./templates
+  output_dir:          /work/char/out
+  obf_cshrc:           /tools/obf/cshrc
+  tool_version_script: /tools/liberate/version.csh
+  main_script:         char_trio_groupLPE_ssgnp_cworst_T_25c.tcl
+
+tool_settings:
+  liberate_version: "23.1.1"
+
+trio_groups:
+  - LPE_ssgnp_cworst_T_25c
+  - LPE_typgnp_cworst_T_25c
+
+pvt_corners:
+  - {name: tt_25,  volt: 0.90, temp:  25, active: true, seed: true}
+  - {name: ff_125, volt: 0.99, temp: 125, active: true, seed: false}
+  - {name: ss_m40, volt: 0.81, temp: -40, active: true, seed: false}
+
+cells:
+  - INV
+  - BUF
+  - NAND2

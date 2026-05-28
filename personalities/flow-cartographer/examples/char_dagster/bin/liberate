@@ -1,0 +1,121 @@
+#!/usr/bin/env python3
+"""Mock Cadence ``liberate`` (stdlib only, no real EDA, no network).
+
+Reads ``CHAR_TRIO_GROUP`` and ``CHAR_PVT`` from the environment (set by
+run.scr), discovers the cell list at
+``$generated_dir/.MnPVT_cell_list/char_trio_group<trio_group>.tcl``, and
+for every cell writes::
+
+    <out_dir>/<trio_group>/<pvt>/<cell>.lib
+    <out_dir>/<trio_group>/<pvt>/<cell>.ldb
+
+The .lib body content (digest, delay_ps) is a deterministic hash of the
+rendered Template / SECTION / model-card / netlist files for that
+(trio_group, pvt) — same content yields byte-identical bodies regardless
+of where on disk they live. Header path lines DO encode the absolute
+paths read; that's the only file-system-sensitive content.
+"""
+import argparse
+import hashlib
+import os
+import re
+import sys
+from pathlib import Path
+
+CELL_RE = re.compile(r"set\s+cells\s*\{([^}]*)\}", re.DOTALL)
+
+
+def parse_cell_list(cell_list_path: Path) -> list:
+    """Extract the cell names from `set cells { INV BUF NAND2 }` in the
+    rendered MnPVT cell list file."""
+    text = cell_list_path.read_text()
+    m = CELL_RE.search(text)
+    if not m:
+        return []
+    raw = m.group(1).replace("\\", " ")
+    return [tok for tok in raw.split() if tok and not tok.startswith("#")]
+
+
+def _read(path: Path) -> str:
+    return path.read_text() if path.exists() else ""
+
+
+def main(argv) -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("-tcl", dest="main_tcl", required=True)
+    ap.add_argument("-log", dest="log_file", default=None)
+    args = ap.parse_args(argv)
+
+    trio_group = os.environ.get("CHAR_TRIO_GROUP")
+    pvt = os.environ.get("CHAR_PVT")
+    if not trio_group or not pvt:
+        print("liberate: CHAR_TRIO_GROUP and CHAR_PVT must be set in env",
+              file=sys.stderr)
+        return 2
+
+    generated_dir = Path(args.main_tcl).resolve().parent
+    out_root = Path(os.environ.get("CHAR_OUT_DIR", generated_dir / ".out"))
+    out_dir = out_root / trio_group / pvt
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    cell_list_path = (generated_dir / ".MnPVT_cell_list"
+                      / f"char_trio_group{trio_group}.tcl")
+    cells = parse_cell_list(cell_list_path)
+    if not cells:
+        print(f"liberate: no cells parsed from {cell_list_path}", file=sys.stderr)
+        return 3
+
+    template_tcl = generated_dir / trio_group / "Template" / f"MYLIB{pvt}.tcl"
+    model_card = generated_dir / trio_group / "Model_card" / f"{pvt}.inc"
+    section_dir = generated_dir / trio_group / ".Trio_pvt_setting" / "SECTION"
+    section_blobs = "\n".join(
+        _read(section_dir / f"SECTION_{n}" / f"char_{pvt}.tcl")
+        for n in (2, 3, 4, 5, 6, 7)
+    )
+    pvt_blob = "\n".join([_read(template_tcl), _read(model_card), section_blobs])
+
+    netlist_dir = generated_dir / trio_group / "Netlist"
+    leaves = 0
+    for cell in cells:
+        cell_blobs = []
+        for spi in netlist_dir.rglob(f"{cell}.spi"):
+            cell_blobs.append(spi.read_text())
+        cell_blob = "\n".join(cell_blobs)
+
+        h = hashlib.sha256()
+        for chunk in (trio_group, "|", pvt, "|", cell, "|", pvt_blob, "|", cell_blob):
+            h.update(chunk.encode())
+        digest = h.hexdigest()
+        delay_ps = int(digest[:6], 16) % 1000
+
+        lib = out_dir / f"{cell}.lib"
+        ldb = out_dir / f"{cell}.ldb"
+        lib.write_text(
+            "/* liberate mock output */\n"
+            f"/* trio_group: {trio_group} */\n"
+            f"/* pvt: {pvt} */\n"
+            f"/* main_tcl: {args.main_tcl} */\n"
+            f"library (lib__{trio_group}__{pvt}__{cell}) {{\n"
+            "  technology (cmos);\n"
+            f"  pvt : {pvt};\n"
+            f"  cell ({cell}) {{\n"
+            f"    char_digest : {digest};\n"
+            f"    delay_ps : {delay_ps};\n"
+            "  }\n"
+            "}\n"
+        )
+        ldb.write_text(f"# ldb mock for {trio_group}/{pvt}/{cell}\ndigest {digest}\n")
+        leaves += 1
+        msg = f"liberate: characterized {trio_group}/{pvt}/{cell} -> {lib.name}, {ldb.name}"
+        print(msg)
+        if args.log_file:
+            Path(args.log_file).parent.mkdir(parents=True, exist_ok=True)
+            with open(args.log_file, "a") as fh:
+                fh.write(msg + "\n")
+
+    print(f"liberate: done, {leaves} cells -> {out_dir}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

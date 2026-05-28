@@ -1,0 +1,9 @@
+* Model card for {{ project.name }} -- trio_group {{ trio_group }} -- PVT {{ pvt.name }}
+* lpe_rc = {{ lpe_rc }}
+.lib {{ pvt.name }}
+.param vdd  = {{ pvt.volt }}
+.param temp = {{ pvt.temp }}
+{%- if pvt.seed %}
+.param seed_corner = 1
+{%- endif %}
+.endl

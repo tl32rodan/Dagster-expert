@@ -1,0 +1,12 @@
+# dagster.yaml — instance config (STANDARD_USAGE 8: QueuedRunCoordinator
+# is how LSF concurrency is bounded; never a custom RunLauncher).
+run_coordinator:
+  module: dagster.core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 4
+    tag_concurrency_limits:
+      # one bsub per (trio_group, pvt); cap at 4 concurrent liberate runs.
+      - key: "dagster/concurrency_key"
+        value: "liberate_run"
+        limit: 4

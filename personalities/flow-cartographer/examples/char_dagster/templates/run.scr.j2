@@ -1,0 +1,11 @@
+#!/bin/csh -f
+# run.scr — per (trio_group, pvt) Liberate driver. One bsub per partition.
+setenv CHAR_TRIO_GROUP {{ trio_group }}
+setenv CHAR_PVT        {{ pvt.name }}
+setenv CHAR_LOG_DIR    {{ log_dir }}
+
+source {{ paths.obf_cshrc }}
+source {{ paths.tool_version_script }}
+
+cd {{ paths.generated_dir }}
+liberate -tcl {{ main_tcl }} -log $CHAR_LOG_DIR/liberate.log

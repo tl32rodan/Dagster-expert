@@ -1,0 +1,21 @@
+# main.tcl — top-level driver. trio_group + pvt are provided by env vars at
+# run time so the same main.tcl works across all (trio_group, pvt) partitions.
+source add_to_liberate.tcl
+source Bolt.tcl
+
+set trio_group $env(CHAR_TRIO_GROUP)
+set pvt        $env(CHAR_PVT)
+
+# pull the cell list for THIS trio_group
+source .MnPVT_cell_list/char_trio_group${trio_group}.tcl
+
+# sections live under <trio_group>/.Trio_pvt_setting/SECTION/SECTION_{2..7}/char_${pvt}.tcl
+foreach n {2 3 4 5 6 7} {
+    source ${trio_group}/.Trio_pvt_setting/SECTION/SECTION_${n}/char_${pvt}.tcl
+}
+
+# project metadata, available to all sourced fragments
+set_var project_name {{ project.name }}
+set_var trio_groups  { {% for tg in trio_groups %}{{ tg }} {% endfor %}}
+set_var active_pvts  { {% for p in pvts %}{{ p }} {% endfor %}}
+set_var cell_list    { {% for c in cells %}{{ c }} {% endfor %}}

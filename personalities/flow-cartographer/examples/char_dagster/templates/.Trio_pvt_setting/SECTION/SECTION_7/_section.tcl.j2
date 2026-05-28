@@ -1,0 +1,5 @@
+# SECTION {{ section_number }} for PVT {{ pvt.name }} ({{ pvt.volt }}V, {{ pvt.temp }}C)
+# trio_group: {{ trio_group }} ; lpe_rc: {{ lpe_rc }}
+source ../../../Template/{{ project.name }}{{ pvt.name }}.tcl
+set_var section        {{ section_number }}
+set_var section_kind   ccs_output

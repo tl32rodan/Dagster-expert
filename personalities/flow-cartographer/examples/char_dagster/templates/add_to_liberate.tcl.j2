@@ -1,0 +1,8 @@
+# add_to_liberate.tcl — global Liberate add-ons. Single source-of-truth values
+# come from char_config.yaml (project / paths / tool_settings).
+source {{ paths.obf_cshrc }}
+source {{ paths.tool_version_script }}
+set_var lib_name      {{ project.name }}
+set_var lib_version   {{ project.version }}
+set_var lib_type      {{ project.lib_type }}
+set_var liberate_ver  {{ tool_settings.liberate_version }}

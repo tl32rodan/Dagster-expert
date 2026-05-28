@@ -1,0 +1,8 @@
+# MnPVT cell list for trio_group {{ trio_group }} (lpe_rc={{ lpe_rc }}).
+# Sourced from main.tcl. Project: {{ project.name }} v{{ project.version }}.
+set cells { \
+{% for cell in cells %}    {{ cell }} \
+{% endfor %}}
+set_var trio_group  {{ trio_group }}
+set_var lpe_rc      {{ lpe_rc }}
+set_var exclude_cell_fix 1
