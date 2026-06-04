@@ -4,6 +4,14 @@
 > **實作對象**：一個 spec-driven 的五層 Dagster 框架，flow owner 只提供 script + data version + YAML spec，框架自動產生 assets / partitions / mappings / sensors，並把運算投遞到 LSF。
 > **環境**：air-gapped、CentOS 7、LSF、tcsh、NFS、Dagster 1.13.x（asset-centric）。
 > **驗證方式**：用既有的 `netlist_files`（trio_group × cell 降維案例）作為第一個 reference flow，跑通端到端。
+>
+> **D1 狀態（2026-06-04，已驗證）**：本架構已用 **liberate-char**（pvt × cell，
+> 6 generator + 9 characterize leaf）作第一個 application 實作,並以真 Dagster
+> 1.13.3 的 **daemon + reconcile sensor** 端到端跑通(9/9 leaf,內容 digest 與
+> hand-rolled 參考實作 **MATCH**)。可運行 reference 在
+> `personalities/flow-cartographer/spec_dagster/`(`python -m scripts.run_demo`);
+> 建構過程踩到的 API 雷與據此回修本白皮書的項目,見該目錄 `LESSONS.md`。本文中
+> 標「(D1 實證/補)」的段落即來自該次實作。
 
 ---
 
@@ -442,6 +450,12 @@ def build_asset(asset_spec, dimensions, version_fn, lsf_cfg, batching_cfg):
     if lsf_cfg.project:
         op_tags["lsf/project"] = lsf_cfg.project
 
+    # ⚠️ 實測雷(D1 驗證,2026-06-04):asset body 的 `context` 參數註解必須是
+    # 裸名 `AssetExecutionContext`(`from dagster import AssetExecutionContext`),
+    # 【不可】寫 `dg.AssetExecutionContext`,且該模組【不可】用
+    # `from __future__ import annotations`。Dagster 1.13.3 會把 context 註解
+    # 解析成型別來驗證;PEP-563 字串註解或限定名都會觸發
+    # DagsterInvalidDefinitionError。見 spec_dagster/LESSONS.md L1。
     @dg.asset(
         name=asset_spec.name,
         partitions_def=partitions_def,
@@ -449,7 +463,7 @@ def build_asset(asset_spec, dimensions, version_fn, lsf_cfg, batching_cfg):
         op_tags=op_tags,
         code_version=...,                            # 連結到 version 策略
     )
-    def _asset(context: dg.AssetExecutionContext, config: _Config,
+    def _asset(context: AssetExecutionContext, config: _Config,
                pipes_subprocess_client: dg.PipesSubprocessClient,
                ) -> dg.MaterializeResult:
         coarse = context.partition_key
@@ -470,6 +484,14 @@ def build_asset(asset_spec, dimensions, version_fn, lsf_cfg, batching_cfg):
         return dg.MaterializeResult(metadata={"items_done": len(config.items)})
     return _asset
 ```
+
+**[實作契約] generator kind 的契約(D1 補,2026-06-04)**:上面詳述了 compute
+kind;`kind: generator`(輕量轉換,如 liberate-char 的 template_tcl/netlist…)
+需要對稱的契約 —— **generator script 函數回傳 `dict[abs_path, content]`(純資料,
+不 import dagster);framework 負責寫檔 + 對串接內容算 content_hash data_version。**
+這樣 script 保持純粹,framework 獨佔持久化與版本。reference flow `netlist_files`
+只有一個 compute、沒有 generator,所以原白皮書沒寫到這條;liberate-char 有 6 個
+generator,逼出了這個缺口。見 `spec_dagster/flows/liberate_char/script.py`。
 
 ### 4.4 generator.py — 入口
 
@@ -554,8 +576,12 @@ def build_sensor(asset_spec, job, spec):
     batch_size = resolve_batching(spec, asset_spec).size
     registry_key = spec.dimensions[asset_spec.work_items].source
 
+    # default_status=RUNNING 是 D1 實測的關鍵(2026-06-04):air-gap 無 UI 可開
+    # sensor,daemon 預設載入為 STOPPED 就什麼都不發。設 RUNNING 後
+    # `dagster-daemon run` 首個 tick 就評估。見 spec_dagster/LESSONS.md L6。
     @dg.sensor(name=f"{asset_spec.name}_sensor", job=job,
-               minimum_interval_seconds=60)
+               minimum_interval_seconds=60,
+               default_status=dg.DefaultSensorStatus.RUNNING)
     def _sensor(context, **resources):
         registry = resources[registry_key]
         desired = registry.list_desired(asset_spec)       # set[(coarse, item)]
@@ -1070,6 +1096,7 @@ flows/netlist/
 實作 agent 特別注意這些已知坑：
 
 1. **MultiPartitionMapping 方向**：dict key = upstream，dimension_name = downstream。對照官方範例 weekly_abc→daily_123：`{"abc": DimensionPartitionMapping(dimension_name="123", ...)}`。
+   - **單維上游 → 多維下游(D1 實證)**:當上游只分一個維度、下游是 `MultiPartitionsDefinition`(如 liberate-char 的 `template_tcl[pvt] → characterize[pvt,cell]`),正確 primitive 是 `MultiToSingleDimensionPartitionMapping(partition_dimension_name=<共享維度>)`,**不是** `MultiPartitionMapping`。此類別在 1.13.3 是 **beta**(建構時噴 `BetaWarning`);行為正確,但需 pin 版本、必要時在 framework 邊界 suppress。見 `spec_dagster/framework/assets/mapping_builder.py` + `LESSONS.md` L2。
 2. **StaticPartitionMapping 只能用於兩端都 static** 的維度。dynamic 維度（如 cell）用會報 `can only be defined between two StaticPartitionsDefinitions`。所以 cell 維度走 all_of（AllPartitionMapping），不走 static。
 3. **MultiPartitionsDefinition 只能有一個 dynamic 維度**。reference 的 cell 是降維成 config，不在 partition，所以不觸發此限制；但若未來把 cell 放回 partition 要注意。
 4. **run_key 用 hash() 會因 PYTHONHASHSEED 跨 process 飄移**，破壞去重。一律 hashlib。

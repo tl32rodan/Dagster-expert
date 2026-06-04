@@ -1,0 +1,24 @@
+# local-sim instance config (whitepaper §6.1 local-sim variant).
+# No remote workers -> SQLite default storage is fine; DefaultRunLauncher
+# (subprocess) with mock bsub on PATH stands in for LSF. Copied into
+# $DAGSTER_HOME/dagster.yaml by scripts/run_demo.py.
+
+run_launcher:
+  module: dagster._core.launcher
+  class: DefaultRunLauncher
+
+run_coordinator:
+  module: dagster._core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    max_concurrent_runs: 8                 # bounded by the dev host, not LSF/PG
+    tag_concurrency_limits:
+      - key: "dagster/concurrency_key"
+        value: "liberate_run"
+        limit: 4                           # at most 4 characterize leaves at once
+
+run_monitoring:
+  enabled: true
+
+telemetry:
+  enabled: false

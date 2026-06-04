@@ -1,0 +1,131 @@
+#!/usr/bin/env python3
+"""Mock Cadence `liberate` (stdlib only; no real EDA tool, no network).
+
+Reads a run.scr, characterizes every (pvt, cell), and writes
+  <out_dir>/<pvt>__<cell>.lib   and   <out_dir>/<pvt>__<cell>.ldb
+
+Determinism contract (this is what makes the conversion provable):
+  * the .lib BODY (char_digest / delay_ps) is derived ONLY from the
+    *content* of the path-free input files (templates, sections, model
+    cards, netlist, cell list). Same content -> identical body, no matter
+    where the files live on disk.
+  * the .lib HEADER (source_scr / inputs) echoes the absolute paths it
+    read. Those are path-bearing and therefore DIFFER between the
+    hardcoded reference run and the Dagster run.
+  * the .ldb holds only the content digest -> byte-identical everywhere.
+
+So when the Dagster conversion writes to different directories, the ONLY
+difference in the products is the two header path lines -- which the
+diff-proof (converted/core/diff_proof.py) normalizes before comparing.
+"""
+import sys
+import hashlib
+from pathlib import Path
+
+
+def parse_scr(scr_path: str) -> dict:
+    cfg = {
+        "pvts": [], "cells": [], "out_dir": None, "main": None,
+        "cell_list": None, "modelcard": {}, "sections": {}, "netlist": {},
+    }
+    for raw in Path(scr_path).read_text().splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        toks = line.split()
+        cmd = toks[0]
+        if cmd == "set_out_dir":
+            cfg["out_dir"] = toks[1]
+        elif cmd == "set_pvts":
+            cfg["pvts"] = toks[1:]
+        elif cmd == "set_cells":
+            cfg["cells"] = toks[1:]
+        elif cmd == "read_main":
+            cfg["main"] = toks[1]
+        elif cmd == "read_cell_list":
+            cfg["cell_list"] = toks[1]
+        elif cmd == "read_modelcard":
+            cfg["modelcard"][toks[1]] = toks[2]
+        elif cmd == "read_sections":
+            cfg["sections"][toks[1]] = toks[2]
+        elif cmd == "read_netlist":
+            cfg["netlist"][toks[1]] = toks[2]
+        # 'source', 'characterize_all', etc. are no-ops for the mock
+    return cfg
+
+
+def templates_from_main(main_path: str) -> dict:
+    out = {}
+    if not main_path:
+        return out
+    for raw in Path(main_path).read_text().splitlines():
+        line = raw.strip()
+        if line.startswith("source ") and "template_" in line:
+            p = line.split()[1]
+            pvt = Path(p).stem.replace("template_", "")
+            out[pvt] = p
+    return out
+
+
+def _read(path) -> str:
+    return Path(path).read_text() if path and Path(path).exists() else ""
+
+
+def main(argv) -> int:
+    scr = None
+    for i, a in enumerate(argv):
+        if a == "-scr" and i + 1 < len(argv):
+            scr = argv[i + 1]
+    if scr is None:
+        print("liberate: usage: liberate -scr <run.scr>", file=sys.stderr)
+        return 2
+
+    cfg = parse_scr(scr)
+    templates = templates_from_main(cfg["main"])
+    out_dir = Path(cfg["out_dir"])
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cell_list_txt = _read(cfg["cell_list"])
+
+    leaves = 0
+    for pvt in cfg["pvts"]:
+        sec_dir = cfg["sections"].get(pvt)
+        sec_files = sorted(Path(sec_dir).glob("section*.tcl")) if sec_dir else []
+        pvt_parts = [_read(templates.get(pvt)), _read(cfg["modelcard"].get(pvt))]
+        pvt_parts += [_read(s) for s in sec_files]
+        pvt_blob = "\n".join(pvt_parts)
+        for cell in cfg["cells"]:
+            cell_blob = _read(cfg["netlist"].get(cell))
+            h = hashlib.sha256()
+            for chunk in (pvt, "|", cell, "|", pvt_blob, "|", cell_blob, "|", cell_list_txt):
+                h.update(chunk.encode())
+            digest = h.hexdigest()
+            delay_ps = int(digest[:6], 16) % 1000
+
+            inputs = [templates.get(pvt, ""), cfg["modelcard"].get(pvt, "")]
+            inputs += [str(s) for s in sec_files]
+            inputs += [cfg["netlist"].get(cell, ""), cfg["cell_list"] or ""]
+
+            lib = out_dir / f"{pvt}__{cell}.lib"
+            ldb = out_dir / f"{pvt}__{cell}.ldb"
+            lib.write_text(
+                "/* liberate mock output */\n"
+                f"/* source_scr: {scr} */\n"
+                f"/* inputs: {','.join(inputs)} */\n"
+                f"library (lib__{pvt}__{cell}) {{\n"
+                "  technology (cmos);\n"
+                f"  pvt : {pvt};\n"
+                f"  cell ({cell}) {{\n"
+                f"    char_digest : {digest};\n"
+                f"    delay_ps : {delay_ps};\n"
+                "  }\n"
+                "}\n"
+            )
+            ldb.write_text(f"# ldb mock for {pvt}/{cell}\ndigest {digest}\n")
+            leaves += 1
+            print(f"liberate: characterized {pvt}/{cell} -> {lib.name}, {ldb.name}")
+    print(f"liberate: done, {leaves} (pvt,cell) leaves -> {out_dir}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

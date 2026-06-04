@@ -1,0 +1,31 @@
+version: 1
+flow_name: liberate-char
+
+dimensions:
+  pvt:  { type: static, values: [tt_25, ff_125, ss_m40] }
+  cell: { type: static, values: [INV, BUF, NAND2] }
+
+defaults:
+  dispatch: local          # local-sim: PipesSubprocessClient + mock bsub on PATH
+  version: content_hash     # generator data_version = SHA256[:16] of output content
+
+assets:
+  - { name: template_tcl, kind: generator, script: flows.liberate_char.script:gen_template,  partitioned_by: [pvt] }
+  - { name: section_tcl,  kind: generator, script: flows.liberate_char.script:gen_sections,  partitioned_by: [pvt] }
+  - { name: model_card,   kind: generator, script: flows.liberate_char.script:gen_modelcard, partitioned_by: [pvt] }
+  - { name: netlist,      kind: generator, script: flows.liberate_char.script:gen_netlist,   partitioned_by: [cell] }
+  - { name: cell_list,    kind: generator, script: flows.liberate_char.script:gen_cell_list }
+  - { name: main_tcl,     kind: generator, script: flows.liberate_char.script:gen_main_tcl }
+
+  - name: characterize
+    kind: compute
+    script: flows.liberate_char.script:characterize_command
+    partitioned_by: [pvt, cell]
+    op_tags: { "dagster/concurrency_key": "liberate_run" }
+    depends_on:
+      - { asset: template_tcl, mapping: { pvt: identity } }
+      - { asset: section_tcl,  mapping: { pvt: identity } }
+      - { asset: model_card,   mapping: { pvt: identity } }
+      - { asset: netlist,      mapping: { cell: identity } }
+      - { asset: cell_list,    mapping: all }
+      - { asset: main_tcl,     mapping: all }
