@@ -380,9 +380,13 @@ code works against real LSF when you flip `PATH`.
 
 ## What this skill does NOT cover
 
-- **Custom LSFRunLauncher** — making each Dagster RUN itself a
-  bsub'd job. Possible (subclass `RunLauncher`) but adds
-  complexity and the asset-body pattern usually covers the need.
+- **Custom LSFRunLauncher (large-scale only)** — making each Dagster
+  RUN itself a bsub'd job. Justified when run COUNT exceeds what the
+  orchestrator can fork (>~thousands of concurrent runs); the
+  asset-body pattern in this skill is the small/medium-scale default.
+  Covered separately in `learn/13-lsf-integration/` Part B (custom
+  `RunLauncher` ABC contract + shared Postgres requirement + PG
+  connection-budget ceiling formula).
 - **Site-specific LSF policies** — your IT may require specific
   `-P project`, `-q queue`, walltime limits, fair-share account.
   Ask your LSF admin; bake into `lsf_submit.py` defaults.

@@ -237,7 +237,7 @@ metadata / log content / partition status。差異分類為**結構**(可接受)
 
 D2 完成 ≠ 整個工程結束。完成後可選:
 - **D3?** 內部 char_dagster 的 migration kit(從 D2 經驗蒸餾;**等你開**)
-- **後續**:真實 LSF 接入(`dispatch: lsf` 從 stub 換真 bsub;對應白皮書 §6)
+- **後續**:真實 LSF 接入 — 由 framework 的 `LSFRunLauncher`(白皮書 §6.2)接管 bsub;application 端 spec 只標 `dispatch: lsf` + `lsf:` 資源(queue/cores/mem_mb/walltime)。**絕不在 application script.py 內再 bsub**(那是 nested bsub;白皮書 §0 第 4 條 + 附錄 A 第 7 條)
 - **後續**:把根 `AGENTS.md` / `README.md` / `MEMORY.md` 中 stale 的 v1
   flow-cartographer 描述改成「framework 工作區」說法(本白皮書附錄 D 的
   Ripple 提醒)
