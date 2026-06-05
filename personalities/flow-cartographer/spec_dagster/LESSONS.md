@@ -140,6 +140,76 @@ sharp edge worth the onboarding checklist (§3.5 already sets
 
 ---
 
+## L9 — `get_latest_materialization_event` has no `partition` kwarg in 1.13.3  [WP-EDIT]
+
+I assumed `instance.get_latest_materialization_event(asset_key, partition=pk)`
+would work; 1.13.3 rejects the kwarg. Correct path is
+`instance.get_event_records(EventRecordsFilter(event_type=..., asset_key=...,
+asset_partitions=[pk]), limit=1, ascending=False)` — and there *is* also
+`get_latest_data_version_record(asset_key, partition_key=...)`, which I
+discovered later when probing.
+
+**[WP-EDIT]** Whitepaper §5.2 / appendix C C1 acceptance row should cite
+`get_event_records(EventRecordsFilter(..., asset_partitions=[pk]))` as
+the per-partition history primitive (not the un-partitioned helper),
+since C1 verification is per-partition.
+
+## L10 — `EventRecordsFilter` requires `event_type` (positional)  [WP-EDIT]
+
+Constructing `EventRecordsFilter(asset_key=key)` without an `event_type`
+raises `TypeError: missing 1 required positional argument: 'event_type'`.
+Even when you want all events for an asset, you have to pass one
+(`DagsterEventType.ASSET_MATERIALIZATION` is the usual one for
+state-management checks).
+
+**[WP-EDIT]** Appendix C C1 / C5 acceptance recipe should show the
+filter with `event_type=DagsterEventType.ASSET_MATERIALIZATION` — a
+weak agent without this hint will write `EventRecordsFilter(asset_key=)`
+and get a confusing TypeError after a long materialization loop.
+
+## L11 — data version tag is `dagster/data_version` (not `logical_version`)  [WP-EDIT]
+
+Pipes-reported data versions land on
+`materialization.tags["dagster/data_version"]` (64-char SHA256 if the
+user supplies a `DataVersion`; the system also stamps
+`dagster/data_version_is_user_provided: "true"`). Bonus: every input's
+version is recorded on the same materialization as
+`dagster/input_data_version/<upstream_name>` (16-char in our case
+because the upstream generators emit `content_hash` 16-char digests).
+
+**[WP-EDIT]** Whitepaper appendix B (data version) should add: "1.13.3
+records the asset's own version under `materialization.tags['dagster/data_version']`
+and every upstream input's version under `dagster/input_data_version/<upstream>`
+on the same tag dict. This gives a downstream materialization a
+**self-contained provenance fingerprint** — useful for both C1 state
+checks and for diagnosing 'why did this re-run?' staleness questions."
+
+## L12 — path-free vs path-bearing data versions
+
+Not a bug — a design fact worth recording. The framework's content_hash
+versioning is honest: if a generator embeds the absolute output root in
+its content (liberate-char's `main_tcl` and `cell_list` do — they print
+`source {root}/templates/template_*.tcl`), then **two runs against
+different `LIBERATE_DAG_ROOT`s WILL get different data versions for
+those generators by construction**. This propagates into the
+`input_data_version/main_tcl` tag on every characterize materialization,
+making it side-specific.
+
+This is exactly why the mock `liberate` was designed to make the **`.lib`
+body and `.ldb` digest path-free** (`converted/core/bin/liberate:18-20`,
+the determinism contract): the path-free SHA256 over the *content* of
+templates/sections/model-cards/netlist/cell-list is what matters. The
+4 path-free upstreams match 9/9 across sides; the 2 path-bearing ones
+diverge by design, and the gate is the .ldb digest (9/9 MATCH).
+
+The whitepaper doesn't need an edit for this; it's a property of
+liberate-char that happens to surface a nice principle: **a
+content_hash data_version on path-bearing output is honest about its
+dependency on the path; consumers that want path-invariance must
+normalize, like mock liberate does.**
+
+---
+
 ## Daemon + sensor run — RESULT (verified)
 
 ```
