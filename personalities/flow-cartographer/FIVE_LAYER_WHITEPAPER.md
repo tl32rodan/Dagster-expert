@@ -889,6 +889,12 @@ with open_dagster_pipes() as pipes:                          # 同節點 file-ba
   (Postgres run store)
 - worker 端 PipesSubprocessClient 走**同節點 temp file**(非 NFS,非 S3/GCS/Azure)— 跨主機
   狀態同步交給 Postgres,不再經 file Pipes
+- **D1 實證(C 階段 mock-bsub 整合測試)**:在正常 Dagster 配線之外(如單元測試手建 launcher),
+  必須用 `launcher.register_instance(instance)` 掛載 — 直接賦值 `_instance` 會
+  AttributeError(它是 RunLauncher base class 的 read-only property)。同樣,需要 stand-in
+  `DagsterRun` 時用 `@dg.job` decorator 建 noop job 後 `instance.create_run_for_job(...)`;
+  `dg.define_asset_job(...)` 回的是 `UnresolvedAssetJobDefinition`,`create_run_for_job` 會拒。
+  見 `spec_dagster/tests/test_lsf_launcher.py` 與 LESSONS.md L13/L14。
 
 ### 6.3 資源與效能分析(四個負載面)
 

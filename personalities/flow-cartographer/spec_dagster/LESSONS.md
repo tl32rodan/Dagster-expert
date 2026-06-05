@@ -184,6 +184,41 @@ on the same tag dict. This gives a downstream materialization a
 **self-contained provenance fingerprint** — useful for both C1 state
 checks and for diagnosing 'why did this re-run?' staleness questions."
 
+## L13 — `define_asset_job` returns Unresolved; use `@dg.job` for create_run_for_job  [WP-EDIT]
+
+The framework's LSFRunLauncher integration test wanted a minimal
+`DagsterRun` to bind tags to. `instance.create_run_for_job(job_def=...)`
+rejects `define_asset_job(...)` because that returns an
+`UnresolvedAssetJobDefinition`. The fix:
+
+```python
+@dg.op
+def _noop(): return None
+
+@dg.job
+def _noop_job_def(): _noop()
+
+run = instance.create_run_for_job(job_def=_noop_job_def, tags={...})
+```
+
+**[WP-EDIT]** Whitepaper §8 testing — if it ever sketches a launcher /
+sensor unit test that needs a stand-in run, note this resolution
+distinction explicitly, since `define_asset_job` is the natural-looking
+choice and silently fails late.
+
+## L14 — `launcher._instance =` is rejected; use `launcher.register_instance(instance)`  [WP-EDIT]
+
+`RunLauncher._instance` is a read-only property in 1.13.3; assigning to
+it raises `AttributeError`. The official mount point is
+`launcher.register_instance(instance)` (this is what `DagsterInstance`
+itself calls internally when wiring its `run_launcher`). For framework
+tests that hand-build a launcher and bind it to a tmp instance, call
+`register_instance` explicitly.
+
+**[WP-EDIT]** Whitepaper §6.2 `LSFRunLauncher` reference — add a one-line
+note: "outside of normal Dagster wiring (e.g. in unit tests), bind via
+`launcher.register_instance(instance)`, not direct attribute assignment."
+
 ## L12 — path-free vs path-bearing data versions
 
 Not a bug — a design fact worth recording. The framework's content_hash
