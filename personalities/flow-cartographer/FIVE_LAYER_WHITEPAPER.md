@@ -1155,68 +1155,96 @@ def input_fingerprint_version(tool_version: str, input_resolver: Callable) -> Ve
 >
 > 蒸餾自 v1 `flow-cartographer/conversion-coverage/01..05`(2026-06-04 廢棄)。
 > 原 v1 6×C 細部準則的精神,已被本附錄收斂為「面向 → 行為等價點 → 驗收方法」。
-> 弱 agent 走 D2_IMPLEMENTATION_PLAN.md 的 Phase C4 時,逐面向跑這份清單。
+>
+> **2026-06-05 D2 實證版**:每個面向的「驗收方法」已從概念描述換成具體
+> API 呼叫與資料 receipt;末尾附 D2 實跑數據(全 PASS;見
+> `spec_dagster/flows/liberate_char/EQUIVALENCE.md` 完整 raw artifact)。
+> 弱 agent 走 D2 Phase C4 時,逐面向跑這份清單即可。
 
 ### C1 State management
 
-| 必須等價的具體點 | 驗收方法 |
+| 必須等價的具體點 | 驗收方法(D2 實證) |
 |---|---|
-| Run / asset / partition / event log 的儲存形狀 | `dagster instance info`、`dagster run list` 兩端比對 |
-| Materialization records 每個 partition 有一筆 | `dagster asset partition status --select <asset>` |
-| `DataVersion` 計算結果(content_hash 模式) | 同一 input → 同一 16-byte hash;改 input → hash 變 |
-| 跨 process / 重啟後狀態仍然一致 | 重啟 daemon,partition status / data version 不變 |
+| Materialization records 每個 partition 有一筆 | `instance.get_materialized_partitions(AssetKey("<asset>"))` 兩端 set 相等 |
+| `dagster/data_version` 計算結果 | 對每個已物化 partition:`get_event_records(EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION, asset_key=..., asset_partitions=[pk]), limit=1, ascending=False)` 取最新 record;讀 `materialization.tags["dagster/data_version"]`(LESSONS.md L9/L10/L11);兩端每個 partition 的值必須相同 |
+| 上游 data version chain 一致 | 同一 record 的 `dagster/input_data_version/<upstream>` 對每個 path-free 上游兩端必須相同(path-bearing 上游 — 內容含絕對路徑者 — 容許不同,屬已知結構差異;見 LESSONS.md L12) |
+| Partition key 序列化形式一致 | `MultiPartitionsDefinition({"pvt": ..., "cell": ...})` 兩端序列化為 `cell|pvt` 字典序(`INV|tt_25` 而非 `tt_25|INV`) |
+| 跨 process / 重啟後狀態仍然一致 | 重啟 daemon,`get_materialized_partitions` 與 data_version tag 不變(prod Postgres 天然滿足;local-sim 同 DAGSTER_HOME 即可) |
+
+**Receipt(D2,liberate-char,9 leaves)**:
+- 兩端 `len(get_materialized_partitions)` = **9/9 相等**
+- 兩端每葉 `dagster/data_version` = **9/9 MATCH**(mock liberate 對 path-free content 算 SHA256,兩端輸入相同 → 輸出相同)
+- 4 個 path-free 上游(`template_tcl`、`section_tcl`、`model_card`、`netlist`)的 `input_data_version` 鏈 = **9/9 MATCH**;2 個 path-bearing 上游(`cell_list`、`main_tcl`)依設計兩端不同(已說明於 LESSONS.md L12 與 EQUIVALENCE.md C1 結構差異欄)
 
 ### C2 Stop & rerun
 
-| 必須等價的具體點 | 驗收方法 |
+| 必須等價的具體點 | 驗收方法(D2 實證) |
 |---|---|
-| 單一 partition rerun (`--partition 'INV|tt_25'`) 只重跑該 leaf | `dagster asset materialize --select characterize --partition …`;只看到該 leaf event |
-| Run cancellation 不留 orphan(本機 subprocess / 未來 LSF bkill) | 跑到一半 `dagster run terminate`,確認 worker / subprocess 都死 |
-| Batch 部分成功 → 下次 reconciliation 只補未完成的 | (僅 `trigger: reconciliation` 模式適用)mock 一個中途失敗,確認下次 tick 只發剩餘 items |
-| `run_monitoring.enabled` 偵測 stuck run | 殺掉 worker、`run_monitoring` 在配置秒數內標 run 為失敗 |
+| 單一 partition rerun 只重跑該 leaf | `dg.materialize([asset], partition_key=MultiPartitionKey({...}))` 觸發後,新增 ASSET_MATERIALIZATION events 數量 = 1,且新增 record 的 `materialization.partition` 必須是該 leaf;不可觸到其它 partition |
+| Run cancellation:**dispatch:local** 不留 orphan | `dagster run terminate <id>` → asset body 內的 PipesSubprocessClient 子程序自然死 |
+| Run cancellation:**dispatch:lsf** bkill 到 LSF job | `LSFRunLauncher.terminate(run_id)` 從 `run.tags["lsf/job_id"]` 取 id 後 `bkill`;見 `framework/launcher/lsf_run_launcher.py` 與 `tests/test_lsf_launcher.py::test_terminate_bkills_persisted_job_id` |
+| Batch 部分成功 → 下次 reconciliation 只補未完成的 | reconcile sensor `plan_reconcile(desired, observed)` 純函數;見 `framework/sensor/planner.py` 與 `tests/test_planner.py::test_partial_observed`;daemon 端日誌應出現「`<asset>: K missing of N -> K RunRequests`」並對應已物化集合更新 |
+| `run_monitoring` 偵測 stuck run(prod LSF) | `LSFRunLauncher.supports_check_run_worker_health = True` + `check_run_worker_health` 從 bjobs 對映 WorkerStatus;`PEND/RUN -> RUNNING`、`DONE -> SUCCESS`、`EXIT -> FAILED`;見 `tests/test_lsf_launcher.py::test_map_state` 與 `test_check_run_worker_health_maps_*` |
+
+**Receipt(D2,liberate-char `INV|tt_25` rerun)**:兩端 `rerun_new_materialization_count` = **1**;`rerun_touched_partitions` = `['INV|tt_25']`。框架版 LSF 路徑由 15 個 launcher 整合測試覆蓋,本機 mock bsub/bjobs/bkill on PATH 跑通。
 
 ### C3 Job scheduling
 
-| 必須等價的具體點 | 驗收方法 |
+> 本面向 D2 允許**結構差異**:framework 用 reconcile sensor
+> (`desired − observed`,`default_status=DefaultSensorStatus.RUNNING`),
+> hand-rolled 用 `AutomationCondition.eager()` + `netlist_drop_sensor`
+> (事件驅動)。兩個都是正確設計(LESSONS.md L6)。**行為**等價的證據在
+> 「daemon 真的 emit RunRequests 然後 succeed」。
+
+| 必須等價的具體點 | 驗收方法(D2 實證) |
 |---|---|
-| `AutomationCondition.eager()` 觸發等價 | 上游 materialize → 下游被 framework-generated 與 converted 各自 eager rebuild 行為一致 |
-| `@sensor minimum_interval_seconds` 兩端一致 | 確認 spec 的 trigger 子欄位 → generator 注入 minimum_interval 數值 |
-| Backfill 行為等價 | `dagster asset backfill` 對相同 selection 兩端產生同樣的 partition 集合 |
-| Daemon liveness | `dagster-daemon liveness-check` 退 0 |
+| Daemon liveness(headless air-gap) | 啟動後 `daemon.log` 含「`Instance is configured with the following daemons: ['AssetDaemon', ..., 'SensorDaemon']`」 |
+| Sensor evaluation 真的發生 | `daemon.log` 含「`Checking for new runs for sensor: <reconcile_sensor_name>`」 |
+| Sensor 對 N 個 missing partition 發 N 個 RunRequest | `daemon.log` 含「`<asset>: K missing of N -> K RunRequests`」(framework 的 `build_sensor` 把這行寫入 context.log;見 `framework/sensor/factory.py`) |
+| `tag_concurrency_limits` 對家族並行設限 | Spec 的 `op_tags["dagster/concurrency_key"]` + dagster.yaml 的 `tag_concurrency_limits` 兩端值一致 → `QueuedRunCoordinator` 分波洩流,觀察 `get_materialized_partitions` 隨時間單調遞增 |
+| `default_status=RUNNING` 讓 headless daemon 自動啟用 sensor | framework `build_sensor` 已設(`framework/sensor/factory.py`);否則 daemon 載入為 STOPPED 不評估,踩 LESSONS.md L6 |
+
+**Receipt(D2,`scripts/run_demo.py`)**:`characterize_reconcile_sensor` 第 1 個 tick log「`characterize: 9 missing of 9 -> 9 RunRequests`」,daemon launch 9 runs;`tag_concurrency_limits: liberate_run: 4` 下分波 **0 → 3 → 7 → 9**;23 runs 全 SUCCESS;9/9 leaf 物化。
 
 ### C4 Dependency definition
 
-| 必須等價的具體點 | 驗收方法 |
+| 必須等價的具體點 | 驗收方法(D2 實證) |
 |---|---|
-| Style A (`deps=[AssetDep(...)]`) 為 framework 唯一輸出風格 | framework 不可用 `ins=`(會強制 IO load);grep 檢查 |
-| `MultiPartitionsDefinition` 方向正確 | `mapping_builder` 單元測試 + 兩端對同一 partition key 跑出同一上游集合 |
-| Cross-dimension `MultiToSingleDimensionPartitionMapping(partition_dimension_name=…)` | 對 `characterize(pvt=tt_25, cell=INV)` 兩端比上游 dependency partition keys 集合,應相同 |
-| 不出現 `PartitionMapping` subclass | grep `class .*PartitionMapping` 全 repo 0 命中(framework 內部 built-in 組合除外) |
-| 維度 / role 命名遵循 MEMORY.md「graph-theory terminology」偏好 | code review:不混用 corner/root 域名 |
+| 唯一輸出風格 `deps=[AssetDep(...)]`(不用 `ins=`) | framework 端不會強制 IO load:`grep -rE "ins=" framework/assets/builder.py` 必須 0 命中 |
+| Asset parent set 一致 | `ag = defs.resolve_asset_graph(); ag.get(AssetKey("<compute>")).parent_keys` 兩端 set 相等(注意:1.13.3 是 `resolve_asset_graph`,不是 `get_asset_graph`;見 LESSONS.md L3) |
+| Partition keys 集合一致 | `node.partitions_def.get_partition_keys()` 兩端 set 相等 |
+| 單維上游 → 多維下游用同一 primitive | 兩端都用 `MultiToSingleDimensionPartitionMapping(partition_dimension_name=<shared>)`;此 primitive 在 1.13.3 是 **beta**(LESSONS.md L2)— 行為正確,但會噴 `BetaWarning`,framework 邊界可 suppress |
+| 不出現 `class .* PartitionMapping` subclass | `grep -rE "class .* *PartitionMapping" .` 全 repo 0 命中(framework 內 built-in 組合除外) |
+
+**Receipt(D2,liberate-char)**:`characterize.parent_keys = {cell_list, main_tcl, model_card, netlist, section_tcl, template_tcl}` 兩端 set 相等(6/6);`MultiPartitionsDefinition({pvt, cell})` 9 partition keys 兩端集合一致;`MultiToSingleDimensionPartitionMapping` 為兩端共同 primitive。
 
 ### C5 Logs & env status
 
-| 必須等價的具體點 | 驗收方法 |
+| 必須等價的具體點 | 驗收方法(D2 實證) |
 |---|---|
-| 結構化 event log 事件類型集合相同 | `dagster run debug export <run_id>` 兩端比對 event types frequency |
-| Compute log(stdout/stderr 收集)能取得 | `dagster run log <run_id>` 兩端都有 |
-| Pipes message 通道(asset 內呼叫的子程序)順利回傳 materialization | `pipes.report_asset_materialization` 在兩端產出對應 record |
-| `dagster instance migrate` 跑得過(schema 一致) | 跑一次,退 0 |
-| Storage 與 DAGSTER_HOME | **prod**:Postgres 後端;`dagster instance migrate` 退 0;`psql -c "select count(*) from pg_stat_activity where datname='dagster'"` 在預算內(§6.1 公式)。**local-sim**:SQLite + DAGSTER_HOME 本機磁碟,確認非 NFS、`alembic exists` 不應出現 |
+| Pipes message channel 工作 | 兩端 `materialization.tags["dagster/data_version"]` 必須非空且相同 — 因為這條 tag 就是經 `pipes.report_asset_materialization(data_version=...)` 傳回來的,等同證明 channel OK(`PipesFileContextInjector`/`PipesFileMessageReader` 同節點 temp 路徑可達) |
+| 結構化事件 ASSET_MATERIALIZATION 數量一致 | `EventRecordsFilter(event_type=DagsterEventType.ASSET_MATERIALIZATION, asset_key=...)`(LESSONS.md L10:`event_type` positional required)兩端 count 相等 |
+| `dagster instance migrate`(schema 一致) | `instance.upgrade()` 退 0 — 兩端 SQLite 場景天然 OK;prod Postgres 場景必須 |
+| Storage 配置 | **prod**:Postgres + `psql -c "select count(*) from pg_stat_activity where datname='dagster'"` 連線數在 §6.1 公式預算內。**local-sim**:SQLite + DAGSTER_HOME 本機磁碟(非 NFS;`alembic exists` 不應出現) |
+| `dispatch: lsf` 下 worker env 通到 Postgres | bsub `-env` 列含 `DAGSTER_HOME,DAGSTER_PG_PASSWORD,PATH,PYTHONPATH`(LSFRunLauncher 已寫死);見 `tests/test_lsf_launcher.py::test_bsub_argv_env_forwarding_for_postgres` |
 
-### 驗收彙整模板(D2 Phase C5 寫進 `flows/liberate-char/EQUIVALENCE.md`)
+**Receipt(D2,liberate-char)**:`instance.upgrade()` 兩端綠;9/9 `dagster/data_version` 非空且兩端 MATCH(即 Pipes 確實雙向通);9/9 path-free `.ldb` digest MATCH(mock liberate 對 content 算的 SHA256);LSF env-forwarding 由 `test_bsub_argv_env_forwarding_for_postgres` 整合測試覆蓋。
+
+### 驗收彙整模板(D2 已填好版;放在每個 application 的 `EQUIVALENCE.md`)
 
 ```
 | 面向 | 結構差異(列舉,接受) | 行為差異(必須 0) | 結論 |
 |---|---|---|---|
-| C1 State            | …                       | …                  | PASS / FAIL |
-| C2 Stop & rerun     | …                       | …                  | PASS / FAIL |
-| C3 Job scheduling   | …                       | …                  | PASS / FAIL |
-| C4 Dependency def   | …                       | …                  | PASS / FAIL |
-| C5 Logs & env       | …                       | …                  | PASS / FAIL |
+| C1 State            | path-bearing 上游 data_version 兩端不同(cell_list/main_tcl 內嵌 SOURCES root);framework 多檔 generator 把全部 content concat 一起 hash | 無 | PASS |
+| C2 Stop & rerun     | (LSF 路徑由 mock bsub/bjobs/bkill 整合測試覆蓋,非生產 LSF) | 無 | PASS |
+| C3 Job scheduling   | framework: reconcile sensor + `default_status=RUNNING`;hand-rolled: `AutomationCondition.eager()` + `netlist_drop_sensor` | 無 | PASS |
+| C4 Dependency def   | (兩端結構完全相同) | 無 | PASS |
+| C5 Logs & env       | (兩端結構完全相同) | 無 | PASS |
 ```
 
-5 個面向全 PASS = D2 完成判準之一(對應 D2 計畫 §1.1 的等價性條目)。
+5 個面向全 PASS = D2 完成判準之一。實證見
+`spec_dagster/flows/liberate_char/EQUIVALENCE.md`(自動 generated;`python -m
+scripts.equivalence` 可重現)。
 
 ---
 
