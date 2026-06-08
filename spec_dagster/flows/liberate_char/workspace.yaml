@@ -1,0 +1,4 @@
+load_from:
+  - python_module:
+      module_name: flows.liberate_char.definitions
+      working_directory: ../..        # spec_dagster/ root (so `framework` + `flows` import)

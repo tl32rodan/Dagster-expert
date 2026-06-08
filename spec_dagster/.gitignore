@@ -1,0 +1,6 @@
+.dagster_home/
+.dagster_home_*/
+.eq_*.json
+__pycache__/
+*.pyc
+.pytest_cache/

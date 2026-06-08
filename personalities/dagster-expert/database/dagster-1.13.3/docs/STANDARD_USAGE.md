@@ -29,7 +29,7 @@ materializes.
 | Execute via **CLI** (`dagster asset materialize --select --partition`) + **sensor-driven** incremental. | ❌ Use the UI **"Materialize all"** button as an execution path. |
 | Observe in the **UI**; serve analysts a `dagster-webserver --read-only` instance. | ❌ Routine wide-range `dagster job backfill` for thousands of partitions. |
 | Control concurrency with `QueuedRunCoordinator` `max_concurrent_runs` + `tag_concurrency_limits`. | ❌ **Subclass `RunCoordinator`** — not recommended/supported here in 1.13.3. |
-| Run cluster work from **inside the asset body** via `PipesSubprocessClient` (e.g. `bsub`) + in-body queue throttle. | ❌ **Subclass `RunLauncher`** to push runs to a cluster — "much more work / out of scope". |
+| Run cluster work from **inside the asset body** via `PipesSubprocessClient` (e.g. `bsub`) — **default for ≤ hundreds of runs**. | ⚠️ Subclass `RunLauncher` **ONLY** when run COUNT exceeds what the orchestrator can fork (>~thousands of runs → one-run-per-bsub on LSF). Requires shared Postgres + connection-budget cap. See §8 + `learn/13-lsf-integration/` Part B. |
 | Instance: `DefaultRunLauncher`, Postgres beyond solo dev, `telemetry.enabled: false`, `run_monitoring` on. | ❌ Reach for a custom multi-thread launcher to "parallelize" a backfill — **wrong layer** (see §9c). |
 | Keep N>2 partition dimensions as a **composite key** (2-dim limit). | ❌ 3-dim `MultiPartitionsDefinition`; `dagster._core.*` imports; `dg`/`uv`/`pipx`/Poetry/k8s/Helm/public PyPI/Docker/telemetry/Dagster+. |
 
@@ -277,11 +277,26 @@ telemetry: { enabled: false }
 
 **Configure built-ins; delegate cluster work via Pipes; do NOT subclass.**
 
-- **Run launcher.** Standard `DefaultRunLauncher` (subprocess). For LSF/cluster,
-  the **asset body** calls `PipesSubprocessClient.run([... "bsub" ...])` — see
-  `learn/13-lsf-integration/pipelines/asset.py:48-83` and
-  `skills/lsf-executor/SKILL.md`. Subclassing `RunLauncher` is "possible but adds
-  complexity / out of scope".
+- **Run launcher — two regimes, by run COUNT (not run weight).**
+  - **Small/medium scale (default; ≤ hundreds of concurrent runs).** Keep
+    `DefaultRunLauncher` (subprocess); the **asset body** calls
+    `PipesSubprocessClient.run([... "bsub" ...])` — one bsub per asset, inside
+    the run. See `learn/13-lsf-integration/pipelines/asset.py:48-83` (Part A)
+    and `skills/lsf-executor/SKILL.md`.
+  - **Large scale (>~thousands of concurrent run requests).** The orchestrator
+    cannot fork one Python run-worker process per run. Here a **custom
+    `LSFRunLauncher`** is justified: one Dagster run = one `bsub` = one LSF
+    job; the run worker (`dagster api execute_run`, in_process executor)
+    executes on an LSF node; the orchestrator forks nothing. This requires
+    (a) the `RunLauncher` ABC contract — `launch_run` / `terminate` /
+    `check_run_worker_health` (for `run_monitoring`) + `ConfigurableClass`;
+    (b) **shared Postgres** run+event store (remote workers can't use
+    SQLite/NFS — see `learn/12-scaling/POSTGRES_MIGRATION.md`); (c) the real
+    concurrency ceiling is
+    `min(LSF slots, floor((PG max_connections − reserved)/conns_per_worker))`,
+    mitigated by PgBouncer transaction pooling. The asset body must **not**
+    bsub again (nested bsub). See `learn/13-lsf-integration/` Part B.
+  - Subclassing `RunCoordinator` remains out of scope — only the launcher.
 - **Run coordinator (queuing).** Use `QueuedRunCoordinator` and tune two knobs:
   `max_concurrent_runs` (instance cap) and `tag_concurrency_limits` (cap a family
   keyed on `dagster/concurrency_key`). Do **not** subclass `RunCoordinator`.
@@ -340,7 +355,8 @@ concurrency "pools" are a newer-Dagster feature — do **not** assume they exist
 - Partition mapping teaching: `learn/17-incremental-cross-partition/`
 - Canonical many-to-many: `learn/20-multi-library-grain/pipelines/edges.py`
 - Full reference implementation: `demo/scale-lib/`
-- Cluster execution via Pipes: `skills/lsf-executor/SKILL.md`, `learn/13-lsf-integration/`
+- Cluster execution via Pipes (small scale): `skills/lsf-executor/SKILL.md`, `learn/13-lsf-integration/` Part A
+- Large-scale custom `LSFRunLauncher` (>~thousands of concurrent runs): `learn/13-lsf-integration/` Part B
 - CLI / dagster.yaml / workspace.yaml: `skills/cli-cheatsheet/`, `skills/dagster-yaml-reference/`, `skills/workspace-yaml-reference/`
 - Schedules / sensors: lessons 14 / 15
 
