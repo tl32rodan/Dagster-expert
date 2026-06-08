@@ -1,35 +1,52 @@
-# flow-cartographer — five-layer Dagster framework workspace
+# flow-cartographer — Dagster orchestration framework workspace
 
 This personality owns the design, spec, and verification for a
-**spec-driven five-layer Dagster framework** that lets a flow owner
-declare an asset graph in YAML and gets a runnable Dagster code
-location for free (assets, partitions, partition-mappings, jobs, and a
-reconciliation sensor — all generated from the spec). It targets the
-TSMC air-gap environment: CentOS 7, LSF, tcsh, NFS, Dagster 1.13.x.
+**Dagster-based orchestration framework** for the TSMC air-gap
+environment (CentOS 7, LSF, tcsh, NFS, Dagster 1.13.x). It supports
+**two execution modes** as first-class peers:
+
+- **Mode A — sync-execution** (Dagster = lineage **and** execution).
+  Reference: `spec_dagster/`. Best for ≤ hundreds of concurrent runs.
+- **Mode B — async-execution / Execution Fabric** (Dagster = lineage
+  only; execution outsourced). Reference: `execution_fabric/` (planned).
+  Best for thousands+ of concurrent runs with long task durations.
+
+**Pick a mode**: `ARCHITECTURE_CHOICE.md` has a 60-second decision tree.
 
 ## Where things live
 
 | Artifact | Path | Role |
 |---|---|---|
-| **Architecture spec** | `FIVE_LAYER_WHITEPAPER.md` | The single source of truth for what the framework MUST be: 5 layers (M1 spec → M2 generator → M3 sensor → M4 launcher → M5 worker), every implementation contract, ten lessons from the D1 build baked into the implementation-contract callouts, appendix C with the **5 behavioral equivalence aspects (C1–C5)** that every application built on the framework must pass. |
-| **D2 plan** | `D2_IMPLEMENTATION_PLAN.md` | The plan for converting `liberate-char` (the first application) to run on the framework. Five phases (C1–C5 spec → script → generated-dagster → equivalence test → EQUIVALENCE.md). |
-| **Hand-rolled reference** | `examples/liberate-char/` | The pre-framework conversion of liberate-char (`converted/` is the runnable Dagster code; `flow-src/` is the original flow's source artifacts). Used as the **equivalence target**: the framework must produce behaviorally-identical Dagster from a spec.yaml that this example expresses in hand-written Python. |
-| **Framework + reference app** | `../spec_dagster/` (repo top-level) | The actual implementation — `framework/` is the framework, `flows/liberate_char/` is liberate-char expressed as `spec.yaml + script.py`, `tests/` is the pure + integration pytest suite, `scripts/run_demo.py` and `scripts/equivalence.py` are the two end-to-end verifications, `ONBOARDING.md` is the flow-owner SOP, `LESSONS.md` records what the build taught us about 1.13.3 / the whitepaper. It lives at repo top-level (not under this personality) because it is framework code, not personality content — and so it can be packaged and moved independently. |
-| **Custom RunLauncher reference** | `../dagster-expert/learn/13-lsf-integration/` | Lesson 13 Part B in the dagster-expert corpus covers the **standalone reference** for a custom `LSFRunLauncher` (the M4 large-scale path). The framework's actual launcher lives at `../spec_dagster/framework/launcher/lsf_run_launcher.py`. |
+| **Mode chooser** ⭐ | `ARCHITECTURE_CHOICE.md` | The first thing to read. Decision tree (60s), adoption criteria, anti-patterns, migration paths between modes. |
+| **Mode A architecture spec** | `FIVE_LAYER_WHITEPAPER.md` | Mode A's source of truth: 5 layers (M1 spec → M2 generator → M3 sensor → M4 launcher → M5 worker), every implementation contract, fourteen lessons (L1-L14) from the D1 build baked into the implementation-contract callouts, appendix C with the **5 behavioral equivalence aspects (C1–C5)** that every Mode-A application must pass. |
+| **Mode A conversion plan** | `D2_IMPLEMENTATION_PLAN.md` | The plan for converting `liberate-char` (the first application) to run on the Mode-A framework. Five phases (C1–C5 spec → script → generated-dagster → equivalence test → EQUIVALENCE.md). **EXECUTED** in PR #18. |
+| **Mode B architecture spec** | `EXECUTION_FABRIC_WHITEPAPER.md` | Mode B's source of truth: three-domain model (Dagster lineage / Execution Fabric / Control+UI), state machine with SUBMITTED/RUNNING split, three fault-handling contracts (dispatch dedup / orphan recovery / harvest idempotency), Phase 1 vs Phase 2 scope split. |
+| **Mode B Phase 1 plan** | `PHASE_1_PLAN.md` | The plan for porting `liberate-char` from Mode A to Mode B Phase 1. v1→v2 layer map, file-level module breakdown (17 verbatim copies + 3 rewrites + 11 new modules), 1.13.3 API probe results (§10 Q4 ANSWERED 2026-06-05). **NOT YET BUILT**. |
+| **Hand-rolled reference** | `examples/liberate-char/` | The pre-framework conversion of liberate-char (`converted/` is the runnable Dagster code; `flow-src/` is the original flow's source artifacts). The example the Mode-A framework was extracted from. |
+| **Mode A framework + reference app** | `../spec_dagster/` (repo top-level) | The Mode-A implementation — `framework/`, `flows/liberate_char/`, `tests/`, `scripts/run_demo.py` + `scripts/equivalence.py`, `ONBOARDING.md`, `LESSONS.md` (L1-L14). Top-level so it can be packaged and moved independently. |
+| **Mode B framework + reference app** | `../execution_fabric/` (planned, repo top-level) | The Mode-B implementation — same shape as `spec_dagster/` but with `fabric/` layer (status DB, file lock, LSF run client) and split sensor model (dispatch + harvest). |
+| **Custom RunLauncher reference** | `../dagster-expert/learn/13-lsf-integration/` | Lesson 13 Part B in the dagster-expert corpus covers a **standalone reference** for a custom `LSFRunLauncher` — note this was a Mode-A scaling experiment retired in favor of Mode B's outsourced execution. Kept as decision-history artifact. |
 
 ## Quick navigation by intent
 
 | You want to… | Read |
 |---|---|
-| Understand the architecture (5 layers, sensor model, launcher contract, Postgres backend) | `FIVE_LAYER_WHITEPAPER.md` |
-| Implement a new flow on the framework | `../spec_dagster/ONBOARDING.md` (and copy `../spec_dagster/flows/_template/`) |
-| See a real, runnable application | `../spec_dagster/flows/liberate_char/` + `scripts/run_demo.py` |
-| Verify a flow's behavioral equivalence vs a hand-rolled reference | `../spec_dagster/scripts/equivalence.py` (template); `../spec_dagster/flows/liberate_char/EQUIVALENCE.md` (a filled-out example) |
-| Diagnose a Dagster 1.13.3 quirk hit during the build | `../spec_dagster/LESSONS.md` (L1–L14, each cross-referenced to the whitepaper sections that absorbed it) |
-| Plan a flow-to-framework conversion | `D2_IMPLEMENTATION_PLAN.md` |
-| Compare framework-generated vs hand-rolled | `examples/liberate-char/converted/` (the reference) vs `../spec_dagster/flows/liberate_char/` (the framework version) |
+| **Pick which mode to use** | `ARCHITECTURE_CHOICE.md` (decision tree §3) |
+| Understand Mode A (sync-execution) | `FIVE_LAYER_WHITEPAPER.md` |
+| Understand Mode B (async-execution) | `EXECUTION_FABRIC_WHITEPAPER.md` |
+| Compare the two modes head-to-head | `ARCHITECTURE_CHOICE.md` (§0 table, §1 essential distinction) |
+| Implement a new flow on Mode A | `../spec_dagster/ONBOARDING.md` (and copy `../spec_dagster/flows/_template/`) |
+| Implement a new flow on Mode B | `PHASE_1_PLAN.md` (build Mode B framework first, since `execution_fabric/` doesn't exist yet) |
+| See a real, runnable Mode A application | `../spec_dagster/flows/liberate_char/` + `scripts/run_demo.py` |
+| Verify Mode A equivalence vs hand-rolled | `../spec_dagster/scripts/equivalence.py`; `../spec_dagster/flows/liberate_char/EQUIVALENCE.md` |
+| Diagnose a Dagster 1.13.3 quirk | `../spec_dagster/LESSONS.md` (L1–L14, also see `PHASE_1_PLAN.md` §10 Q4 for Mode-B-specific API probes) |
+| Plan a Mode A flow-to-framework conversion | `D2_IMPLEMENTATION_PLAN.md` |
+| Plan a Mode A → Mode B migration | `ARCHITECTURE_CHOICE.md` §6 + `PHASE_1_PLAN.md` §8 |
+| Compare framework-generated vs hand-rolled | `examples/liberate-char/converted/` (the reference) vs `../spec_dagster/flows/liberate_char/` (the Mode-A framework version) |
 
 ## Current status (2026-06-05)
+
+**Mode A (sync-execution)** — production-ready:
 
 - **D1** built + verified: `spec_dagster` framework drives liberate-char
   (6 generators + 9 `characterize` leaves) end-to-end with real Dagster
@@ -57,6 +74,24 @@ TSMC air-gap environment: CentOS 7, LSF, tcsh, NFS, Dagster 1.13.x.
   a cluster); the `work_items` dimensionality-reduction + batching
   sensor (the netlist_files reference flow path; liberate-char
   partitions `cell` directly).
+
+**Mode B (async-execution / Execution Fabric)** — planned, not built:
+
+- **Whitepaper landed** (`EXECUTION_FABRIC_WHITEPAPER.md`): three-domain
+  model (Dagster lineage / Execution Fabric / Control+UI), state
+  machine with SUBMITTED/RUNNING split, fault contracts.
+- **Phase 1 plan ready** (`PHASE_1_PLAN.md`): file-level breakdown,
+  17 verbatim copies from Mode A, 3 rewrites, 11 new modules,
+  ≈ 8.5 days estimated. Key 1.13.3 API probe done (§10 Q4 ANSWERED):
+  `report_runless_asset_event` + sensor-side event reporting both work,
+  Option A path confirmed viable.
+- **Implementation status**: awaiting decision on `PHASE_1_PLAN.md` §1
+  (organizational: branch strategy, parallel `execution_fabric/` dir
+  vs in-place, doc handling). Technical unknowns are cleared.
+- **Scaling envelope**: Mode B targets >~thousands of concurrent runs
+  with long task durations; below ~hundreds, Mode A is the better
+  choice (less complexity for the same outcome). See
+  `ARCHITECTURE_CHOICE.md` §3 decision tree.
 
 ## Why the personality is just three artifacts
 

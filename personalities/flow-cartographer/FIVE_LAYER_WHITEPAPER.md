@@ -1,5 +1,7 @@
-# 五層通用 Dagster 框架 — 實作白皮書
+# 五層通用 Dagster 框架 — 實作白皮書(Mode A,sync-execution)
 
+> **與 v2 白皮書的關係**：本文件描述 **Mode A(sync-execution)** — Dagster 同時當 lineage 與 execution layer,asset body 直接執行計算,Dagster run 結束 = 計算結束。另一架構選擇是 **Mode B(async-execution / Execution Fabric)**,把 execution 外包,Dagster 只剩 lineage,見 `EXECUTION_FABRIC_WHITEPAPER.md`。兩者**並存而非替代**:**先讀 `ARCHITECTURE_CHOICE.md` §3 決策樹**判斷你的 flow 該走哪條。簡言之:run count <~ hundreds + 短任務 + 短 LSF queue → Mode A;>~thousands + 長任務 + 長 LSF queue → Mode B。
+>
 > **本文件的用途**：交給實作 agent（Kimi 2.5T）作為建構規格。
 > **實作對象**：一個 spec-driven 的五層 Dagster 框架，flow owner 只提供 script + data version + YAML spec，框架自動產生 assets / partitions / mappings / sensors，並把運算投遞到 LSF。
 > **環境**：air-gapped、CentOS 7、LSF、tcsh、NFS、Dagster 1.13.x（asset-centric）。

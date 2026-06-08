@@ -5,7 +5,7 @@
 >
 > **環境前提**：air-gapped、LSF job scheduler、NFS 共享儲存、可用 Kafka（無 RabbitMQ）、PostgreSQL 可部署於專用主機、tcsh/csh 環境。
 >
-> **與 v1 白皮書的關係**：本文件**取代** `FIVE_LAYER_WHITEPAPER.md`(v1)。v1 把 Dagster 同時當 lineage 與 execution layer(自寫 `LSFRunLauncher` 把 run worker 丟上 LSF);本文件(v2)把這兩個職責徹底分開,Dagster 只剩 lineage。v1 在 §2 被作為「被否決方案」分析(其優缺點誠實記錄),作為決策歷史保留。對應的實作計畫見 `PHASE_1_PLAN.md`。
+> **與 v1 白皮書的關係**：本文件**並存**於 `FIVE_LAYER_WHITEPAPER.md`(v1),**不取代它**。兩者是兩種架構選擇,適用不同 scale 與場景:v1(sync-execution)Dagster 同時當 lineage 與 execution;v2(async-execution)把 execution 外包,Dagster 只剩 lineage。**先讀 `ARCHITECTURE_CHOICE.md`** 判斷你的 flow 該走哪條;它有決策樹與適用場景表。本文件 §2「原方案回顧」原本以「否決」語氣描述 v1,實際語境是「v1 在 10k+ 規模下不可擴展,因此 v2 為大規模生」;v1 在小規模仍是合適的第一選擇,並有 D1+D2 verified 的 `spec_dagster/` reference。對應的 v2 實作計畫見 `PHASE_1_PLAN.md`。
 ---
 ## 0. TL;DR
 - **核心分層**：把「資料身分」（lineage / data version / 增量判斷）與「執行過程」（dispatch / 排隊 / 實際計算）徹底分開。Dagster 只負責前者；自建的執行層負責後者。
