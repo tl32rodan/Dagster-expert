@@ -194,28 +194,57 @@ Replaces v1's reconcile-and-RunRequest sensor. Semantics:
 
 ### 3.3 `framework/sensor/harvest.py` — NEW (TDD priority)
 
-The single most fragile piece (whitepaper §6.3). Semantics:
-- Cursor: `cursor = json.dumps({"last_storage_id": int})` of the
-  highest status-DB row processed.
-- Per tick:
-  1. `rows = status_db.list_unharvested_terminals(after_id=cursor)`
-     (sorted by id ascending; LIMIT batch to keep tick bounded).
-  2. For each row:
-     - Idempotently emit a materialization event. **Option A** (preferred):
-       `context.instance.report_runless_asset_event(...)` if 1.13.3
-       supports it. **Option B**: emit `AssetMaterialization` via
-       `context.log_event(...)` from within the sensor's tick context.
-       **Probe before commit** (see §10 Q4).
-     - Mark the row `harvested=true` in status DB (or delete it —
-       whitepaper §8.4 mandates delete).
-  3. Advance cursor AFTER all backfills complete.
-  4. Whitepaper §6.3 invariant: cursor falls back, never overshoots.
+The single most fragile piece (whitepaper §6.3). Probe-confirmed
+shape (§10 Q4):
 
-Tests (test_harvest_sensor.py) MUST cover:
-- repeat tick → no duplicate materializations
-- sensor restart mid-batch → resumed cleanly
-- partial backfill failure → cursor stays put, retried next tick
-- delete-after-harvest → status DB doesn't grow unboundedly
+```python
+@sensor(job=_noop_job, default_status=DefaultSensorStatus.RUNNING,
+        minimum_interval_seconds=30)
+def harvest_sensor(context: SensorEvaluationContext):
+    cursor = json.loads(context.cursor or '{"last_id": 0}')
+    rows = status_db.list_unharvested_terminals(after_id=cursor["last_id"], limit=200)
+    if not rows:
+        return SkipReason("no unharvested terminals")
+    processed = []
+    for row in rows:
+        try:
+            context.instance.report_runless_asset_event(
+                AssetMaterialization(
+                    asset_key=AssetKey(row.asset_name),
+                    partition=row.partition_key,
+                    tags={"dagster/data_version": row.data_version},
+                    metadata={"lsf_job_id": row.lsf_job_id} if row.lsf_job_id else None,
+                )
+            )
+            processed.append(row.id)
+        except Exception as e:
+            context.log.error(f"harvest failed for row {row.id}: {e}")
+            break  # cursor stays at last successful row; retry next tick
+    if processed:
+        status_db.mark_harvested(processed)            # or delete; whitepaper §8.4
+        new_last = max(processed)
+        return SensorResult(
+            run_requests=[],  # we wrote events directly; no run needed
+            cursor=json.dumps({"last_id": new_last}),
+            skip_reason=SkipReason(f"harvested {len(processed)} rows"),
+        )
+    return SkipReason("no progress this tick")
+```
+
+Note `job=` is required by `@sensor` but we never emit RunRequests; a
+trivial noop job satisfies the schema and is never targeted. Cursor
+advances only after `mark_harvested` succeeds, so a crash mid-batch
+re-tries the same rows next tick (status DB upsert + `report_runless`
+are both idempotent w.r.t. the event log — duplicate events don't
+corrupt staleness because latest-wins).
+
+Tests (`test_harvest_sensor.py`) MUST cover:
+- repeat tick → no duplicate materializations (cursor advancement)
+- sensor restart mid-batch → resumed cleanly from last cursor
+- partial backfill failure (`break` mid-loop) → cursor stays put,
+  retried next tick
+- delete-after-harvest (or `harvested=1` cleanup) → status DB doesn't
+  grow unboundedly
 
 ### 3.4 `framework/fabric/status_db.py` — NEW
 
@@ -449,8 +478,9 @@ out the *execution* layer.
 
 | # | Risk | Mitigation |
 |---|---|---|
-| R1 | 1.13.3 doesn't allow asset body to exit without `MaterializeResult` | Fallback: asset body yields `MaterializeResult` with no data_version (placeholder); harvest sensor reports a 2nd materialization with data_version. Dagster takes latest. — **Probe early (see §10 Q4)**. |
-| R2 | `report_runless_asset_event` not in 1.13.3 | Harvest sensor uses `context.log_event(AssetMaterialization(...))` from within the sensor tick (still requires a run wrapper). Verified by `test_harvest_sensor.py` before plumbing it. |
+| R1 | 1.13.3 doesn't allow asset body to exit without `MaterializeResult` | **RESOLVED 2026-06-05**: probe showed `return None` is accepted; Dagster auto-emits a placeholder materialization. See §10 Q4 answer. |
+| R2 | `report_runless_asset_event` not in 1.13.3 | **RESOLVED 2026-06-05**: probe confirmed it exists, accepts `partition` + `tags`, and works from within a sensor tick. See §10 Q4 answer. |
+| R7 | Dagster auto-emits a placeholder materialization at dispatch end with its own auto-computed data_version (visible in `get_materialized_partitions` and `latest`); a naive dispatch sensor that uses `get_materialized_partitions` as "observed" would see the placeholder and stop re-dispatching even before any real computation happens | **Mitigation**: dispatch sensor's "observed" set MUST come from the status DB (rows in SUCCESS state), NOT from `instance.get_materialized_partitions`. The Dagster-side materialization is for lineage downstream; the dispatch decision is execution truth (status DB). Same partition will end up with 2 events (placeholder + harvest); latest-wins gives the real data_version. Document in PHASE1_LIMITATIONS.md. |
 | R3 | SQLite-on-NFS in real deployment | Whitepaper §3.1 already forbids NFS for Dagster backend; PHASE1_LIMITATIONS.md should mirror this for status DB. Real deploy keeps status DB on local disk. |
 | R4 | Idempotency-key collision between Phase 1 dispatches (e.g. test reruns) | Trigger fingerprint includes upstream data versions; for "rerun same input" the key is intentionally the same (correct dedup); for "different input" the key differs. |
 | R5 | Fabric worker on LSF node can't reach status DB (NFS not mounted there) | For Phase 1: insist status DB is on shared NFS path *readable + writable* from both orchestrator and LSF nodes; document in ONBOARDING.md. For Phase 2: PostgreSQL over network solves this. |
@@ -474,24 +504,47 @@ out the *execution* layer.
 4. **Materialization production**: at v1 we observed `MaterializeResult`
    with `data_version` works via Pipes (D2 evidence). For v2 we need
    the asset body to NOT produce a materialization (so harvest is sole
-   source) — verify which of these 1.13.3 paths works:
-   - **A**: asset body returns `None` / does nothing; sensor uses
-     `instance.report_runless_asset_event(AssetMaterialization(...))`
-     to backfill.
-   - **B**: asset body yields placeholder MaterializeResult (no
-     data_version); harvest sensor yields a new MaterializeResult
-     later; Dagster's "latest wins" semantics handle it.
-   - **C**: asset body yields MaterializeResult with data_version that's
-     somehow obtained synchronously (e.g. wait for harvest before
-     returning) — this REGRESSES to blocking; reject.
+   source).
 
-   Recommend a 30-minute probe BEFORE writing harvest.py:
-   ```bash
-   python -c "from dagster import DagsterInstance, AssetKey, AssetMaterialization; \
-     inst = DagsterInstance.ephemeral(); \
-     inst.report_runless_asset_event(AssetMaterialization(asset_key=AssetKey('x'))); \
-     print(list(inst.get_materialized_partitions(AssetKey('x'))))"
-   ```
+   **ANSWERED 2026-06-05 (1.13.3 probe in venv)**:
+
+   - `DagsterInstance.report_runless_asset_event(AssetMaterialization(...))`
+     **exists in 1.13.3 and works**. The reported event lands in the
+     event log, the partition (if any) appears in
+     `get_materialized_partitions`, the `dagster/data_version` tag
+     persists exactly as set.
+   - `@asset` body that returns `None` does **NOT** raise; the run
+     succeeds AND Dagster **automatically emits a placeholder
+     `ASSET_MATERIALIZATION` event** with its own auto-computed
+     `dagster/data_version` (derived from upstream input data versions).
+     So a "dispatch-only" asset body has a placeholder materialization
+     by default.
+   - Multiple `report_runless_asset_event` calls for the same partition
+     **append** to the event log (not upsert). Dagster's staleness /
+     latest-wins reads the most-recent event. So the dispatch
+     placeholder + harvest-reported real materialization end up as 2
+     events; the latest (harvest's real `dagster/data_version`) is the
+     one downstream sees.
+   - **A sensor body CAN call `context.instance.report_runless_asset_event(...)`**;
+     `return SkipReason(...)` still allows the side effect. So the
+     harvest sensor writes events directly during its tick (no
+     two-stage run model needed).
+
+   **Decision** (Option A path, confirmed viable): Phase 1 implements
+   v2 with:
+   - dispatch asset body returns `None` after firing `bsub` (Dagster
+     emits a placeholder mat with auto-computed data_version — fine);
+   - harvest sensor reads status DB, calls
+     `context.instance.report_runless_asset_event(AssetMaterialization(
+     asset_key, partition, tags={'dagster/data_version': real_digest}))`
+     for each unharvested SUCCESS row, marks them harvested, returns
+     `SkipReason`;
+   - dispatch sensor uses **status DB SUCCESS** as the "observed" set
+     (NOT `instance.get_materialized_partitions`, which would include
+     the misleading placeholders — see Risk R7 below).
+   - Dagster UI is deliberately not used (whitepaper §3.3), so the
+     placeholder data_version is never visible to operators; the
+     self-built UI reads the status DB.
 
 5. **Equivalence target for v2**: equivalence_v2 compares v2 to **v1
    spec_dagster** (not to hand-rolled `examples/converted/`). Confirm
