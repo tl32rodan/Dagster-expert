@@ -22,7 +22,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent      # spec_dagster/
-REPO = ROOT.parent.parent.parent                    # repo root
+REPO = ROOT.parent                                  # repo root (spec_dagster sits at the top level)
 EQ_OUT = ROOT / "flows" / "liberate_char" / "EQUIVALENCE.md"
 
 DAGSTER_HOME_FRAMEWORK = ROOT / ".dagster_home_eq_framework"

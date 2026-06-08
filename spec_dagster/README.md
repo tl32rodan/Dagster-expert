@@ -1,13 +1,22 @@
 # spec_dagster — five-layer spec-driven Dagster framework (D1 reference build)
 
-> Built 2026-06-04 as the **D1** deliverable: a working slice of the
-> `FIVE_LAYER_WHITEPAPER.md` architecture, with `liberate-char`
-> expressed as a spec + script and driven end-to-end by **daemon +
-> sensor** (local-sim mode: DefaultRunLauncher + SQLite + mock bsub).
+> Built 2026-06-04 as the **D1** deliverable: a working slice of
+> `personalities/flow-cartographer/FIVE_LAYER_WHITEPAPER.md`, with
+> `liberate-char` expressed as a spec + script and driven end-to-end
+> by **daemon + sensor** (local-sim mode: DefaultRunLauncher + SQLite
+> + mock bsub).
+>
+> **Why at repo top-level (not under `personalities/flow-cartographer/`)**:
+> this is framework *code*, not personality content. It has its own
+> pytest suite, demo harness, equivalence harness, and `ONBOARDING.md`;
+> it is meant to be independently runnable and packageable. The
+> personality at `personalities/flow-cartographer/` owns the
+> architecture spec (whitepaper) + the conversion plan + the
+> hand-rolled equivalence reference under `examples/`.
 >
 > This is the first real implementation of the whitepaper. Lessons
 > learned during the build are captured in `LESSONS.md` (and folded
-> back into proposed whitepaper edits).
+> back into the whitepaper's implementation contracts).
 
 ## Layout
 

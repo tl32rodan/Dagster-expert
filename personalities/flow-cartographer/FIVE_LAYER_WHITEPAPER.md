@@ -9,7 +9,7 @@
 > 6 generator + 9 characterize leaf）作第一個 application 實作,並以真 Dagster
 > 1.13.3 的 **daemon + reconcile sensor** 端到端跑通(9/9 leaf,內容 digest 與
 > hand-rolled 參考實作 **MATCH**)。可運行 reference 在
-> `personalities/flow-cartographer/spec_dagster/`(`python -m scripts.run_demo`);
+> `spec_dagster/`(repo top-level;`python -m scripts.run_demo`);
 > 建構過程踩到的 API 雷與據此回修本白皮書的項目,見該目錄 `LESSONS.md`。本文中
 > 標「(D1 實證/補)」的段落即來自該次實作。
 
