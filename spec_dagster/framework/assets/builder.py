@@ -52,6 +52,12 @@ def build_asset(asset_spec: AssetSpec, spec: FlowSpec, version_fn: Callable[[str
     deps = _build_deps(asset_spec, spec)
     script_fn = _import(asset_spec.script) if asset_spec.script else None
 
+    # trigger: automation / reconciliation — both drive cascade via a
+    # framework-built sensor (factory.py). AutomationCondition.eager() was
+    # tried and rejected: AssetDaemon's evaluation of eager() against
+    # unpartitioned-entry → partitioned-downstream-with-`all`-mapping
+    # yields 0 evaluations per tick in 1.13.3 (lesson L15). The
+    # framework's own cascade sensor is simpler and proven.
     common = dict(
         name=asset_spec.name,
         partitions_def=partitions_def,

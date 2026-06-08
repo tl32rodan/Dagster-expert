@@ -219,6 +219,75 @@ tests that hand-build a launcher and bind it to a tmp instance, call
 note: "outside of normal Dagster wiring (e.g. in unit tests), bind via
 `launcher.register_instance(instance)`, not direct attribute assignment."
 
+## L15 — `AutomationCondition.eager()` does not cascade unpartitioned→partitioned in 1.13.3 daemon  [WP-EDIT]
+
+Tried to use `AutomationCondition.eager()` for "materialize root → cascade
+pipeline" verification (2026-06-08). Wiring: unpartitioned entry asset
+→ 6 partitioned generators (mapping=`all`) → multi-partitioned
+characterize. After 14+ AssetDaemon ticks (>3 min), zero downstream
+materializations. Daemon log per tick:
+
+```
+AssetDaemon - Checking 8 assets/checks ...
+AssetDaemon - Tick produced 0 runs and 0 asset evaluations for cascade_sensor
+```
+
+Also: `default_automation_condition_sensor` defaults to STOPPED (same
+headless-daemon issue as L6); overrode with
+`AutomationConditionSensorDefinition(default_status=RUNNING)` — sensor
+then ticked, still emitted 0 runs every time. Direct probe via
+`sensor.evaluate_tick(...)`:
+
+```
+NotImplementedError: Automation condition sensors cannot be evaluated
+like regular user-space sensors.
+```
+
+So `AutomationConditionSensorDefinition` goes through AssetDaemon's
+internal pipeline (not the standard sensor evaluation path), making it
+hard to debug from user code.
+
+**Workaround (adopted)**: skip `AutomationCondition.eager()`; framework
+builds its own per-flow cascade sensor (`framework/sensor/cascade.py`)
+that computes `desired − observed` for every asset on each tick and
+emits one RunRequest per missing (asset, partition). Predictable,
+debug-friendly, reuses proven D1 reconcile-sensor foundation. Verified
+end-to-end: `materialize start` → cascade sensor 3 ticks (23 → 15 → 7
+RunRequests) → 9/9 characterize, 24/24 runs SUCCESS, determinism MATCH.
+
+**[WP-EDIT]** Whitepaper Mode A appendix should record: in 1.13.3,
+`AutomationCondition.eager()` does NOT cascade
+unpartitioned→partitioned-with-mapping-all; framework's own cascade
+sensor is the answer.
+
+## L16 — `define_asset_job(selection=...)` rejects mixed partition shapes  [WP-EDIT]
+
+First cascade sensor attempt used one job for the whole flow:
+`selection=AssetSelection.assets(<all non-entry assets>)`. Definitions
+load failed:
+
+```
+DagsterInvalidDefinitionError: Selected assets must have the same
+partitions definitions, but the selected assets have different
+partitions definitions:
+  'tt_25', 'ff_125', 'ss_m40': {AssetKey(['template_tcl']), ...}
+  'INV', 'BUF', 'NAND2': {AssetKey(['netlist'])}
+  Multi-partitioned, with dimensions: Cell, Pvt: {AssetKey(['characterize'])}
+```
+
+`define_asset_job` requires ONE partitions definition per selection;
+liberate-char has four (pvt-only, cell-only, unpartitioned, pvt×cell).
+
+**Workaround (adopted)**: build ONE job per non-entry asset (each has a
+single partition shape) and use `@sensor(jobs=[...])` so the sensor can
+emit RunRequests against any of them via
+`RunRequest(job_name=..., partition_key=...)`. Per-asset jobs are named
+`{flow}__{asset}__cas_job`.
+
+**[WP-EDIT]** Whitepaper §4.4 / sensor design note should record this:
+sensors targeting multiple assets MUST build per-asset jobs unless all
+those assets share a partition shape.
+
 ## L12 — path-free vs path-bearing data versions
 
 Not a bug — a design fact worth recording. The framework's content_hash

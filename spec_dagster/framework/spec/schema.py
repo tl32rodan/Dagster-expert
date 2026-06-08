@@ -13,6 +13,13 @@ from pydantic import BaseModel, Field, model_validator
 
 Dispatch = Literal["local", "lsf"]
 Kind = Literal["entry", "generator", "compute"]
+Trigger = Literal["reconciliation", "automation"]
+# - reconciliation: framework builds a reconcile sensor (desired - observed),
+#   sensor ticks every 30s and dispatches missing partitions. Backfill-friendly,
+#   no cascade — fits the original D1 model.
+# - automation: framework attaches AutomationCondition.eager() to the asset;
+#   AssetDaemon evaluates and cascades materializations as upstreams change.
+#   Fits the "materialize root → cascade pipeline" verification pattern.
 
 
 class DimensionSpec(BaseModel):
@@ -55,6 +62,7 @@ class AssetSpec(BaseModel):
     partitioned_by: list[str] = Field(default_factory=list)
     depends_on: list[DependencySpec] = Field(default_factory=list)
     dispatch: Dispatch | None = None  # None -> inherit defaults.dispatch
+    trigger: Trigger | None = None    # None -> inherit defaults.trigger
     op_tags: dict[str, str] = Field(default_factory=dict)
     lsf: LSFResource | None = None
 
@@ -70,6 +78,7 @@ class AssetSpec(BaseModel):
 class FlowDefaults(BaseModel):
     dispatch: Dispatch = "local"
     version: str = "content_hash"
+    trigger: Trigger = "reconciliation"  # back-compat: existing flows keep current behavior
 
 
 class FlowSpec(BaseModel):
@@ -89,6 +98,9 @@ class FlowSpec(BaseModel):
 
     def effective_lsf(self, a: AssetSpec) -> LSFResource | None:
         return a.lsf or self.lsf.get("default")
+
+    def effective_trigger(self, a: AssetSpec) -> str:
+        return a.trigger or self.defaults.trigger
 
     @model_validator(mode="after")
     def _check(self) -> "FlowSpec":

@@ -35,7 +35,8 @@ DAG_ROOT = Path(os.environ.get("LIBERATE_DAG_ROOT", "/tmp/liberate-char-dag"))
 PVTS = ["tt_25", "ff_125", "ss_m40"]
 CELLS = ["INV", "BUF", "NAND2"]
 GEN_PVT = ["template_tcl", "section_tcl", "model_card"]
-TIMEOUT_S = 240
+TIMEOUT_S = 600  # cascade requires multiple AssetDaemon ticks (~30s each) to walk
+                 # the graph levels (start → generators → characterize); be generous.
 EXPECTED = 9  # 3 pvt x 3 cell
 
 
@@ -54,25 +55,21 @@ def setup_home():
     os.environ["LIBERATE_DAG_ROOT"] = str(DAG_ROOT)
 
 
-def bootstrap_generators(instance):
+def materialize_root(instance):
+    """Cascade-mode bootstrap: materialize the single `start` entry asset.
+    AssetDaemon's AutomationCondition.eager() sensor then cascades the
+    materializations downstream — generators (11 partitions) → characterize
+    (9 leaves). The daemon does the rest; we just wait."""
     from flows.liberate_char.definitions import defs
 
     by_name = {k.to_user_string(): a for a in defs.assets for k in a.keys}
-    res = {"pipes_subprocess_client": dg.PipesSubprocessClient()}
-
-    def mat(name, pk=None):
-        r = dg.materialize([by_name[name]], partition_key=pk, resources=res,
-                           selection=[name], instance=instance)
-        assert r.success, f"generator FAIL {name} {pk}"
-
-    for pvt in PVTS:
-        for n in GEN_PVT:
-            mat(n, pvt)
-    for cell in CELLS:
-        mat("netlist", cell)
-    mat("cell_list")
-    mat("main_tcl")
-    _log("bootstrapped 11 generator materializations + SOURCES on disk")
+    r = dg.materialize(
+        [by_name["start"]], resources={"pipes_subprocess_client": dg.PipesSubprocessClient()},
+        selection=["start"], instance=instance,
+    )
+    assert r.success, "materializing root `start` asset failed"
+    _log("materialized root asset `start` (single Dagster run); "
+         "AssetDaemon will cascade the rest")
 
 
 def observed_count(instance) -> int:
@@ -136,7 +133,7 @@ def main() -> int:
     _log(f"DAGSTER_HOME={DAGSTER_HOME}  LIBERATE_DAG_ROOT={DAG_ROOT}")
 
     with dg.DagsterInstance.get() as instance:
-        bootstrap_generators(instance)
+        materialize_root(instance)
 
     daemon = start_daemon()
     try:
@@ -176,7 +173,7 @@ def main() -> int:
 
     ok = (n == EXPECTED and len(libs) == EXPECTED and len(ldbs) == EXPECTED and det_ok)
     _log("=" * 56)
-    _log(f"D1 daemon+sensor verification: {'PASS' if ok else 'FAIL'}")
+    _log(f"D1 cascade verification: {'PASS' if ok else 'FAIL'}")
     _log("=" * 56)
     return 0 if ok else 1
 

@@ -20,7 +20,7 @@
 | Asset body | does the computation (in-process Pipes / launcher-bsub'd run worker) | dispatches the computation and returns immediately |
 | Dagster run lifetime | = computation duration (minutes–hours) | seconds (dispatch only) |
 | Execution truth | Dagster event log | external status DB (Phase 1: SQLite + file lock; Phase 2: PostgreSQL) |
-| Sensor model | one reconcile sensor (`desired − observed` → `RunRequest`) | two sensors: **dispatch** + **harvest** (`report_runless_asset_event`) |
+| Sensor model | reconcile sensor (`trigger: reconciliation`) OR `AutomationCondition.eager()` cascade (`trigger: automation`, default in spec.yaml as of 2026-06-08) | two sensors: **dispatch** + **harvest** (`report_runless_asset_event`) |
 | LSF dispatch unit | the run worker process (Dagster run = 1 bsub) | one computation script (not a run) |
 | Failure semantics | Dagster native (run retry, from-failure, UI status) | self-built (idempotency key + 3 fault contracts, whitepaper §6) |
 | UI semantics | Dagster UI green-light = computation succeeded | Dagster UI green-light = **dispatched only**; real progress in self-built UI |
