@@ -3,7 +3,7 @@
 Generators (folder-as-asset): each writes its file(s) into SOURCES, mirroring
 flow-src's layout — produced from config, NOT copied, NOT read from $FLOW_SRC.
 
-characterize (2D pvt x cell): assembles a per-leaf run.scr from the generated
+characterize (2D pvt x cell): assembles a per-leaf run.sh from the generated
 sources and runs the (mock) liberate via LSF bsub through PipesSubprocessClient
 (STANDARD_USAGE 8 — no custom RunLauncher). Auto-rebuild via AutomationCondition
 (the current 1.13.3 API; AutoMaterializePolicy is deprecated here).

@@ -1,6 +1,6 @@
 """Prove the L0 generators reproduce flow-src/ exactly:
   * path-free files            -> byte-identical
-  * main.tcl / run.scr         -> byte-identical when given the ref root
+  * main.tcl / run.sh         -> byte-identical when given the ref root
   * changing the root          -> ONLY the path substring changes
 This is the source-level half of "the products differ only in paths".
 """
@@ -55,14 +55,14 @@ class TestGeneratorReproducesFlowSrc(unittest.TestCase):
         self.assertEqual(g.gen_main_tcl(self.cfg, REF_ROOT), self._ref("main.tcl"))
 
     def test_run_scr_with_ref_root(self):
-        self.assertEqual(g.gen_run_scr_full(self.cfg, REF_ROOT), self._ref("run.scr"))
+        self.assertEqual(g.gen_run_scr_full(self.cfg, REF_ROOT), self._ref("run.sh"))
 
     def test_only_paths_differ_when_root_changes(self):
         other = "/some/other/dagster/root"
         self.assertEqual(g.gen_main_tcl(self.cfg, other).replace(other, REF_ROOT),
                          self._ref("main.tcl"))
         self.assertEqual(g.gen_run_scr_full(self.cfg, other).replace(other, REF_ROOT),
-                         self._ref("run.scr"))
+                         self._ref("run.sh"))
 
 
 if __name__ == "__main__":
