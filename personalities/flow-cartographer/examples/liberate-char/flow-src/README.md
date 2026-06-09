@@ -18,11 +18,11 @@ characterization flow. Paths are **hardcoded** on purpose — this is the
 | `netlist/<cell>.sp` | cell | SPICE subckt |
 | `Mnpvt_cell_list.tcl` | — (single) | lists all cells; `set_cell \( … \)` |
 | `main.tcl` | — (single) | sources the per-PVT templates (path-bearing) |
-| `run.sh` | — (single) | reads everything, sources `tool_env.csh`, runs `liberate` (path-bearing) |
+| `run.txt` | — (single) | reads everything, sources `tool_env.csh`, runs `liberate` (path-bearing) |
 | `bin/liberate` | — | the **mock** tool (stdlib) |
 
 The param files (templates / sections / model cards / netlist / cell
-list) are **path-free**; only `main.tcl` and `run.sh` embed absolute
+list) are **path-free**; only `main.tcl` and `run.txt` embed absolute
 paths. That is the whole point: after conversion only those embedded
 paths change.
 

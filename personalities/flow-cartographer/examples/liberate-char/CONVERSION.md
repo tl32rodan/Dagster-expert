@@ -23,7 +23,7 @@ In a real run: `setenv FLOW_SRC /abs/path/to/flow` (tcsh) /
 
 Model the Cadence Liberate characterization flow (per-PVT templates / section
 tcls / model cards, per-cell netlists, a single cell list + main.tcl, a single
-run.sh that runs `liberate` → `.lib`/`.ldb`) as a Dagster 1.13.3 asset graph
+run.txt that runs `liberate` → `.lib`/`.ldb`) as a Dagster 1.13.3 asset graph
 **partitioned on `pvt × cell`**, where every source is **generated from
 `config/liberate.yaml`** (never copied, never read from `$FLOW_SRC` at runtime),
 execution goes through **`bsub` via Pipes**, and the products are **provably
@@ -38,7 +38,7 @@ identical to the original except for embedded paths**.
 3. `model_card` (per-PVT) — generator
 4. `netlist` (per-cell) — generator
 5. `cell_list`, `main_tcl` (single) — generator
-6. `characterize` (per `pvt × cell`) — assemble per-leaf run.sh + run `liberate` via bsub/Pipes
+6. `characterize` (per `pvt × cell`) — assemble per-leaf run.txt + run `liberate` via bsub/Pipes
 - **Out of scope**: real Liberate tool integration (mocked here); a real LSF cluster (mock bsub).
 
 ---
