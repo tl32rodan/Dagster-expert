@@ -6,7 +6,7 @@ from pathlib import Path
 
 DATA_ROOT = Path(os.environ.get("LIBERATE_DAG_ROOT", "/tmp/liberate-char-dag"))
 SOURCES = DATA_ROOT / "sources"   # generator assets write here (mirrors flow-src layout)
-WORK = DATA_ROOT / "work"         # per-leaf run.scr / main.tcl
+WORK = DATA_ROOT / "work"         # per-leaf run.sh / main.tcl
 OUT = DATA_ROOT / "out"           # liberate writes <pvt>__<cell>.lib/.ldb here
 DROP = DATA_ROOT / "drop"         # sensor watches here for new netlists
 

@@ -11,7 +11,7 @@ mkdir -p "$REF_ROOT"
 cp -r "$HERE/." "$REF_ROOT/"
 chmod +x "$REF_ROOT/bin/liberate"
 
-python3 "$REF_ROOT/bin/liberate" -scr "$REF_ROOT/run.scr"
+python3 "$REF_ROOT/bin/liberate" -scr "$REF_ROOT/run.sh"
 
 echo "--- outputs in $REF_ROOT/out ---"
 ls -1 "$REF_ROOT/out"

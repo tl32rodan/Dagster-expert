@@ -1,4 +1,4 @@
-# run.scr -- complete liberate run script (HARDCODED paths)
+# run.sh -- complete liberate run script (HARDCODED paths)
 # This is the single script the original flow feeds to `liberate`.
 source /tmp/liberate-char-ref/tool_env.csh
 set_out_dir /tmp/liberate-char-ref/out

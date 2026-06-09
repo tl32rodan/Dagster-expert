@@ -114,7 +114,7 @@ def verify_determinism(instance):
     import liberate_inner as li  # type: ignore
 
     main_tcl = work / "main.tcl"
-    run_scr = work / "run.scr"
+    run_scr = work / "run.sh"
     main_tcl.write_text(li.gen_main_tcl_leaf(str(DAG_ROOT / "SOURCES"), pvt))
     run_scr.write_text(li.gen_run_scr_leaf(str(DAG_ROOT / "SOURCES"), pvt, cell,
                                            str(out), str(main_tcl)))
