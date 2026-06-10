@@ -11,7 +11,10 @@ OUT = DATA_ROOT / "out"           # liberate writes <pvt>__<cell>.lib/.ldb here
 DROP = DATA_ROOT / "drop"         # sensor watches here for new netlists
 
 CONVERTED = Path(__file__).resolve().parents[1]          # converted/
-LIBERATE_BIN = CONVERTED / "core" / "bin" / "liberate"   # the (mock) tool
-BSUB_BIN = CONVERTED / "core" / "bin" / "bsub"           # the (mock) bsub
+LIBERATE_BIN = CONVERTED / "core" / "bin" / "liberate.py"   # the (mock) tool — renamed
+BSUB_BIN = CONVERTED / "core" / "bin" / "bsub.py"           # ditto;
+# `.py` extension because internal download policy bans extension-less
+# executables. Callers invoke explicitly via the venv's python rather
+# than via PATH lookup (which doesn't auto-append `.py` on Linux).
 LSF_SUBMIT = CONVERTED / "core" / "lsf_submit.py"        # bsub wrapper
 LIBERATE_INNER = CONVERTED / "core" / "liberate_inner.py"  # pipes-aware inner

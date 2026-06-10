@@ -43,14 +43,13 @@ def _noop_job():
 
 @pytest.fixture
 def env_paths(tmp_path, monkeypatch):
-    """Put the mock LSF shims on PATH and point their record/state/kill
-    sidecars into tmp."""
+    """Point the mock LSF shim sidecars into tmp. PATH no longer needed —
+    launcher is wired with explicit `.py` paths + `tool_invoker=[python]`."""
     record = tmp_path / "lsf_record"
     state = tmp_path / "lsf_state"
     killed = tmp_path / "lsf_killed.log"
     record.mkdir()
     state.mkdir()
-    monkeypatch.setenv("PATH", f"{MOCK_DIR}:{os.environ['PATH']}")
     monkeypatch.setenv("MOCK_LSF_RECORD", str(record))
     monkeypatch.setenv("MOCK_LSF_STATE", str(state))
     monkeypatch.setenv("MOCK_LSF_KILLED", str(killed))
@@ -59,10 +58,18 @@ def env_paths(tmp_path, monkeypatch):
 
 @pytest.fixture
 def launcher(tmp_path):
-    """A real LSFRunLauncher with bsub/bjobs/bkill resolved by PATH."""
+    """A real LSFRunLauncher pointed at the mock {bsub,bjobs,bkill}.py
+    wrappers (extension-less names were renamed in commit ... after
+    internal download policy flagged them). `tool_invoker=[sys.executable]`
+    makes subprocess.run([python, .../bsub.py, ...]) work."""
+    import sys
     return LSFRunLauncher(
         default_queue="normal", default_cores=4, default_mem_mb=4096,
         default_walltime="24:00", log_dir=str(tmp_path / "lsf_logs"),
+        bsub_bin=str(MOCK_DIR / "bsub.py"),
+        bjobs_bin=str(MOCK_DIR / "bjobs.py"),
+        bkill_bin=str(MOCK_DIR / "bkill.py"),
+        tool_invoker=[sys.executable],
     )
 
 
@@ -94,7 +101,9 @@ def test_bsub_argv_uses_tags_over_defaults(launcher):
         "lsf/project": "EDAFLOW",
     })
     argv = launcher._bsub_argv(run, ["dagster", "api", "execute_run", "<json>"])
-    assert argv[0] == "bsub"
+    # argv[0] is the invoker (sys.executable); argv[1] is the mock bsub.py path.
+    # Real-LSF invocation has no invoker so argv[0] is "bsub" — flexible assert.
+    assert any(p.endswith("bsub.py") or p == "bsub" for p in argv[:2])
     assert "-q" in argv and argv[argv.index("-q") + 1] == "premium"
     assert "-n" in argv and argv[argv.index("-n") + 1] == "16"
     assert any("rusage[mem=32768]" in a for a in argv)

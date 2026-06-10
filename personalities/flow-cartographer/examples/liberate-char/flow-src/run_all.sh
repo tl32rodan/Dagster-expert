@@ -9,9 +9,9 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 rm -rf "$REF_ROOT"
 mkdir -p "$REF_ROOT"
 cp -r "$HERE/." "$REF_ROOT/"
-chmod +x "$REF_ROOT/bin/liberate"
+chmod +x "$REF_ROOT/bin/liberate.py"
 
-python3 "$REF_ROOT/bin/liberate" -scr "$REF_ROOT/run.txt"
+python3 "$REF_ROOT/bin/liberate.py" -scr "$REF_ROOT/run.txt"
 
 echo "--- outputs in $REF_ROOT/out ---"
 ls -1 "$REF_ROOT/out"

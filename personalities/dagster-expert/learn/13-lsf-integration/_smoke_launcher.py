@@ -19,9 +19,13 @@ from pathlib import Path
 LESSON_ROOT = Path(__file__).parent
 MOCK_LSF = LESSON_ROOT / "scripts" / "mock_lsf"
 
-os.environ["PATH"] = f"{MOCK_LSF}:{os.environ.get('PATH', '')}"
-for p in [MOCK_LSF / "bsub", MOCK_LSF / "bjobs", MOCK_LSF / "bkill"]:
-    os.chmod(p, 0o755)
+# Mock LSF wrappers renamed `bsub.py` / `bjobs.py` / `bkill.py` —
+# extension-less names were flagged by internal download policy. Linux
+# PATH lookup doesn't auto-append `.py`, so invoke each one explicitly
+# via `sys.executable`. See LESSONS L17.
+BSUB = str(MOCK_LSF / "bsub.py")
+BJOBS = str(MOCK_LSF / "bjobs.py")
+BKILL = str(MOCK_LSF / "bkill.py")
 
 
 def assert_bsub_K_runs_inline():
@@ -31,7 +35,7 @@ def assert_bsub_K_runs_inline():
     out_path = Path("/tmp/_smoke_launcher_bsub.out")
     out_path.unlink(missing_ok=True)
     r = subprocess.run(
-        ["bsub", "-K", "-J", "test", "-q", "normal",
+        [sys.executable, BSUB, "-K", "-J", "test", "-q", "normal",
          "-o", str(out_path), "echo", "hello from mock bsub"],
         capture_output=True, text=True,
     )
@@ -43,13 +47,9 @@ def assert_bsub_K_runs_inline():
 
 
 def assert_bjobs_done():
-    """bjobs returns 'DONE 0' for any job id (sync mock model).
-
-    This is what LSFRunLauncher.check_run_worker_health() reads to
-    decide WorkerStatus — DONE → SUCCESS.
-    """
+    """bjobs returns 'DONE 0' for any job id (sync mock model)."""
     r = subprocess.run(
-        ["bjobs", "-a", "-o", "stat exit_code", "-noheader", "12345"],
+        [sys.executable, BJOBS, "-a", "-o", "stat exit_code", "-noheader", "12345"],
         capture_output=True, text=True,
     )
     assert r.returncode == 0, f"bjobs exit={r.returncode}"
@@ -60,10 +60,10 @@ def assert_bjobs_done():
 
 
 def assert_bjobs_filters_empty():
-    """bjobs -p / -r filters return empty under sync mock (no in-flight)."""
+    """bjobs -p / -r filters return empty under sync mock."""
     for flag in ("-p", "-r"):
         r = subprocess.run(
-            ["bjobs", flag, "-u", os.environ.get("USER", "nobody")],
+            [sys.executable, BJOBS, flag, "-u", os.environ.get("USER", "nobody")],
             capture_output=True, text=True,
         )
         assert r.returncode == 0, f"bjobs {flag} exit={r.returncode}"
@@ -72,8 +72,8 @@ def assert_bjobs_filters_empty():
 
 
 def assert_bkill_noop():
-    """bkill <id> succeeds and echoes termination message (no-op semantics)."""
-    r = subprocess.run(["bkill", "99999"], capture_output=True, text=True)
+    """bkill <id> succeeds and echoes termination message."""
+    r = subprocess.run([sys.executable, BKILL, "99999"], capture_output=True, text=True)
     assert r.returncode == 0, f"bkill exit={r.returncode}"
     assert "99999" in r.stderr, f"bkill no echo: {r.stderr!r}"
     print(f"PASS bkill 99999 → {r.stderr.strip()}")
@@ -81,7 +81,6 @@ def assert_bkill_noop():
 
 if __name__ == "__main__":
     print(f"Mock shims dir: {MOCK_LSF}")
-    print(f"PATH front:     {os.environ['PATH'].split(':')[0]}")
     print()
     assert_bsub_K_runs_inline()
     assert_bjobs_done()
