@@ -19,7 +19,7 @@ instead of designing from scratch. It shows, end to end:
 ## The shape
 
 Inputs vary along two axes — **PVT** (`tt_25 / ff_125 / ss_m40`) and **cell**
-(`INV / BUF / NAND2`), sections 2–7. One `run.sh` ties it together and runs
+(`INV / BUF / NAND2`), sections 2–7. One `run.txt` ties it together and runs
 `liberate` → 9 `.lib` + 9 `.ldb`.
 
 ```
@@ -29,12 +29,12 @@ flow-src/  (hardcoded paths)              converted/  (config-driven Dagster)
   modelcard/model_<pvt>.tcl         ──▶     pipelines/spec/partitions.py  (pvt, cell, pvt×cell singletons)
   netlist/<cell>.sp                 ──▶     pipelines/deps.py  (cross-dim MultiToSingleDimension mapping)
   Mnpvt_cell_list.tcl, main.tcl     ──▶     pipelines/assets.py  (generators + 2D `characterize`)
-  run.sh → liberate → out/*.lib    ──▶     bsub via PipesSubprocessClient → out/*.lib
+  run.txt → liberate → out/*.lib    ──▶     bsub via PipesSubprocessClient → out/*.lib
 ```
 
 The param files (templates/sections/modelcards/netlists/cell-list) are
 path-free, so the generator reproduces them **byte-for-byte**. Only `main.tcl`
-and `run.sh` embed paths — so after conversion **only those paths change**, and
+and `run.txt` embed paths — so after conversion **only those paths change**, and
 `core/diff_proof.py` proves it.
 
 ## Run it

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pipes-aware inner process (what LSF runs on the compute node).
 
-It assembles the per-leaf main.tcl + run.sh from the generated SOURCES,
+It assembles the per-leaf main.tcl + run.txt from the generated SOURCES,
 invokes the (mock) liberate tool, then reports the materialization back to
 Dagster via dagster-pipes. data_version = the content digest from the .ldb
 (path-free) so per-leaf staleness tracks content, not paths.
@@ -31,7 +31,7 @@ def main() -> int:
         work = Path(args.work_dir)
         work.mkdir(parents=True, exist_ok=True)
         main_tcl = work / "main.tcl"
-        run_scr = work / "run.sh"
+        run_scr = work / "run.txt"
         main_tcl.write_text(gen_main_tcl_leaf(args.sources_root, args.pvt))
         run_scr.write_text(gen_run_scr_leaf(
             args.sources_root, args.pvt, args.cell, args.out_dir, str(main_tcl)))
