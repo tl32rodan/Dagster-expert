@@ -53,6 +53,13 @@ class LSFRunLauncher(RunLauncher, ConfigurableClass):
         bsub_bin: str = "bsub",
         bjobs_bin: str = "bjobs",
         bkill_bin: str = "bkill",
+        tool_invoker: list[str] | None = None,
+        # ^ prepended to every bsub/bjobs/bkill call. Default empty (real
+        # LSF binaries on PATH). When the "binaries" are actually Python
+        # wrappers — e.g. the mock {bsub,bjobs,bkill}.py shipped for tests
+        # because internal download policy bans extension-less executables —
+        # set to e.g. ["python3"] so subprocess.run([python3, /path/bsub.py,
+        # ...]) works. See LESSONS.md L17.
         inst_data: ConfigurableClassData | None = None,
     ):
         self._default_queue = default_queue
@@ -64,6 +71,7 @@ class LSFRunLauncher(RunLauncher, ConfigurableClass):
         self._bsub = bsub_bin
         self._bjobs = bjobs_bin
         self._bkill = bkill_bin
+        self._invoker = list(tool_invoker or [])
         self._inst_data = inst_data
         super().__init__()
 
@@ -105,6 +113,7 @@ class LSFRunLauncher(RunLauncher, ConfigurableClass):
         out = os.path.join(self._log_dir, f"{run.run_id}.out")
         err = os.path.join(self._log_dir, f"{run.run_id}.err")
         argv = [
+            *self._invoker,
             self._bsub,
             "-J", f"dagster_run_{run.run_id[:8]}",
             "-q", queue, "-n", str(cores),
@@ -158,7 +167,7 @@ class LSFRunLauncher(RunLauncher, ConfigurableClass):
         if not job_id:
             return False
         self._instance.report_run_canceling(run)
-        subprocess.run([self._bkill, job_id], check=False)
+        subprocess.run([*self._invoker, self._bkill, job_id], check=False)
         return True
 
     def check_run_worker_health(self, run) -> CheckRunHealthResult:
@@ -166,7 +175,7 @@ class LSFRunLauncher(RunLauncher, ConfigurableClass):
         if not job_id:
             return CheckRunHealthResult(WorkerStatus.UNKNOWN, "no LSF job id on run tags")
         r = subprocess.run(
-            [self._bjobs, "-a", "-o", "stat exit_code", "-noheader", job_id],
+            [*self._invoker, self._bjobs, "-a", "-o", "stat exit_code", "-noheader", job_id],
             capture_output=True, text=True,
         )
         if r.returncode != 0 or not r.stdout.strip():

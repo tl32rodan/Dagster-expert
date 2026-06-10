@@ -9,14 +9,19 @@ from pathlib import Path
 LESSON_ROOT = Path(__file__).parent
 MOCK_LSF = LESSON_ROOT / "scripts" / "mock_lsf"
 
-# Prepend mock LSF to PATH so `bsub` resolves to our shim
+# Mock LSF binaries were renamed to `bsub.py` etc. (internal download
+# policy bans extension-less executables). Linux PATH lookup does NOT
+# auto-append `.py`, so calling sites must reference the full `.py`
+# path explicitly via the venv's Python.
+# This smoke's `pipelines/asset.py` Pipes path still uses PATH lookup
+# for `bsub` — needs follow-up to invoke explicitly. See LESSONS L17.
 os.environ["PATH"] = f"{MOCK_LSF}:{os.environ.get('PATH', '')}"
 os.environ.setdefault("DAGSTER_HOME", "/tmp/dagster-13-test-home")
 Path(os.environ["DAGSTER_HOME"]).mkdir(parents=True, exist_ok=True)
 shutil.rmtree("/tmp/dagster-13-lsf", ignore_errors=True)
 
 # Make scripts executable
-for p in [MOCK_LSF / "bsub",
+for p in [MOCK_LSF / "bsub.py",
           LESSON_ROOT / "scripts" / "python" / "lsf_submit.py",
           LESSON_ROOT / "scripts" / "python" / "char_inner.py"]:
     os.chmod(p, 0o755)

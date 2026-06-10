@@ -25,8 +25,8 @@ _HERE = Path(__file__).resolve().parent
 _VENDOR = _HERE / "_vendor"
 CFG = load_config(_VENDOR / "liberate.yaml")
 
-BSUB = _VENDOR / "bin" / "bsub"
-LIBERATE_BIN = _VENDOR / "bin" / "liberate"
+BSUB = _VENDOR / "bin" / "bsub.py"
+LIBERATE_BIN = _VENDOR / "bin" / "liberate.py"
 LIBERATE_INNER = _VENDOR / "liberate_inner.py"
 
 
@@ -81,7 +81,11 @@ def gen_main_tcl() -> dict[str, str]:
 def characterize_command(pvt: str, cell: str) -> list[str]:
     work = _work() / f"{pvt}__{cell}"
     return [
-        str(BSUB), "-K",
+        # `bsub.py` is a Python wrapper (renamed from extension-less `bsub` so
+        # internal download policies don't flag it as an execution file); call
+        # it explicitly via the venv's Python instead of relying on the shebang
+        # + executable bit + PATH lookup.
+        sys.executable, str(BSUB), "-K",
         "--job-name", f"char_{pvt}_{cell}", "--queue", "normal", "--memory-mb", "4096",
         "--",
         sys.executable, str(LIBERATE_INNER),

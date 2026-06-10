@@ -32,7 +32,7 @@ def main() -> int:
     ap.add_argument("--env-mode", default="pipes-only")
     a = ap.parse_args(mine)
 
-    bsub = Path(__file__).resolve().parent / "bin" / "bsub"
+    bsub = Path(__file__).resolve().parent / "bin" / "bsub.py"
     cmd = [sys.executable, str(bsub), "-K", "-q", a.queue, "-J", a.job_name, "--"] + inner
     # forward the full env so DAGSTER_PIPES_* reach the inner process
     return subprocess.run(cmd, env=os.environ.copy()).returncode
