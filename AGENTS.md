@@ -15,7 +15,7 @@ TSMC air-gap workstations. Two personalities co-exist:
   trigger-word match). Evolved from the retired `dagster-ap-auditor`
   acceptance gatekeeper, whose mechanical guardrails survive as the
   `verify` tick's self-check. Reads `dagster-expert`'s
-  `database/dagster-1.13.3/`, `learn/`, and `demo/scale-lib/` material
+  `database/dagster-1.13.3/` and `learn/` material
   as ground truth; never duplicates it.
 
 ## Personalities
@@ -56,7 +56,8 @@ Companion files alongside each `ROLE.md`:
 
 `dagster-expert` adds: `learn/ENV_SETUP.md` (per-lesson
 DAGSTER_HOME), `database/dagster-1.13.3/` (API corpus), `skills/`
-(custom skills), `demo/` (production-shaped reference).
+(custom skills). The former `demo/` production reference was retired
+2026-06-11; that role now lives in `spec_dagster/` (repo top-level).
 
 `flow-cartographer` adds: `CONVERSION.md` (the user-owned charter),
 `flow-model/` (live conversion state: ledger `_plan.yaml`, step nodes,

@@ -69,7 +69,6 @@ personalities/
     ROLE.md                    #   mode decision tree + per-mode workflow
     learn/                     #   20 progressive lessons (01 → 20)
     database/dagster-1.13.3/   #   offline API corpus: docs/ + examples/
-    demo/scale-lib/            #   production-shaped 4-layer / folder-as-asset reference
     skills/                    #   bootstrap-airgap, cli-cheatsheet, lookup-api, …
   flow-cartographer/           # memory + schedule; the conversion loop
     ROLE.md                    #   §0 Wake SOP (first action every tick)

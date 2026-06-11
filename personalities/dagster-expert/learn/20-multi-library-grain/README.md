@@ -21,7 +21,7 @@
 
 ### 跟 scale-lib demo 的關係
 
-scale-lib (在 `demo/scale-lib/`) 是 **單 library** 的 reference,有 4-layer import 強制 + folder_digest + perl/python runner + 89 test。
+scale-lib (原 `demo/scale-lib/`,已於 2026-06 退役;本 lesson 是其蒸餾後的存活形式) 是 **單 library** 的 reference,有 4-layer import 強制 + folder_digest + perl/python runner + 89 test。
 
 lesson 20 把 scale-lib 的核心 (parent-mirror partition mapping + step taxonomy + branch hierarchy) 蒸餾到 **lesson 規模**,並加上:
 
@@ -30,7 +30,7 @@ lesson 20 把 scale-lib 的核心 (parent-mirror partition mapping + step taxono
 - asset body 是 stub (不背 runner 複雜度)
 - 不提 PVT / cell (留給 fine tier)
 
-當你要真的接 perl/python runner 跟 LSF,**回去看 `demo/scale-lib/pipelines/runners.py`**;這層 lesson 20 不重複。
+當你要真的接 perl/python runner 跟 LSF,**看 `spec_dagster/`(repo top-level)的 dispatch 模型與 `learn/13-lsf-integration/`**;這層 lesson 20 不重複。
 
 ---
 

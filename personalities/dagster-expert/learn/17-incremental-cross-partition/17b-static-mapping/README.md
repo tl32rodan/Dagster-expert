@@ -2,7 +2,7 @@
 
 **Time**: ~25 min · **The production pattern.**
 
-This is what `demo/scale-lib/` does to wire branch → branch
+This is what the retired `demo/scale-lib/` reference did to wire branch → branch
 (e.g. `corner` partition of step-N → `{lvf, em, ht}` partitions
 of step-(N+1)). When upstream and downstream have **different
 partition definitions**, the default `IdentityPartitionMapping`

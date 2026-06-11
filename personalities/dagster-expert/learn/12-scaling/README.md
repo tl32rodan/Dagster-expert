@@ -123,8 +123,9 @@ def corner_step1(context):
 
 ## Scaling levels — what to do at each scale
 
-> **Calibration anchor**: `demo/scale-lib/` (Brian, 2026-05-12,
-> production-validated) shows that **1 lib × 460 branches × 21
+> **Calibration anchor**: the scale-lib build (Brian, 2026-05-12,
+> production-validated; demo retired 2026-06, distilled into
+> lesson 20) showed that **1 lib × 460 branches × 21
 > steps ≈ 10.6k partition records still fits SQLite**. The
 > triggers below are revised down from an earlier draft that
 > conflated "asset count" (placeholder limit) with "partition
@@ -207,8 +208,9 @@ as Dagster partitions instead. Pull the leaves out of Dagster's
 partition store; let Tier-2 handle the fan-out opaquely.
 
 Use Dagster only as a lineage / observability shell at the
-higher-cardinality boundary. The `demo/scale-lib/` 4-layer
-architecture is the canonical Tier-1 shape; the Tier-2 inside
+higher-cardinality boundary. The 4-layer architecture (distilled
+in `learn/20-multi-library-grain/`; production form: `spec_dagster/`)
+is the canonical Tier-1 shape; the Tier-2 inside
 is whatever your batch scheduler runs.
 
 Don't reach for Level 5 until you've confirmed the cardinality

@@ -15,8 +15,8 @@ For each (library, step) we emit one ``@asset`` whose:
   lesson has no actual data flow (asset bodies are stubs).
 
 The asset body is a stub. A real shop swaps it for a runner that
-``subprocess.run`` s the per-step script — see ``demo/scale-lib/`` for
-that pattern.
+``subprocess.run`` s the per-step script — see ``spec_dagster/`` (repo
+top-level) for the production dispatch pattern.
 """
 # NOTE: do NOT `from __future__ import annotations` here. Dagster 1.13.3
 # validates the asset body's ``context`` parameter annotation literally;

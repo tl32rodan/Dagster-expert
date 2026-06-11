@@ -77,13 +77,15 @@ in one process — fine for a single developer, not for production. (See
 This is the answer to "I have many-to-many cross-asset partition deps and need
 custom mapping — how do I group and execute?" **Do not subclass `PartitionMapping`,
 and do not use jobs.** Use the external-file-driven, asset-centric, layered
-pattern that `demo/scale-lib/` already implements.
+pattern distilled in `learn/20-multi-library-grain/` (formerly exemplified by
+`demo/scale-lib/`, retired 2026-06; the production realization is the
+spec-driven framework at `spec_dagster/`, repo top-level).
 
 ### 3.1 Five layers (relationships are DATA, not code)
 
 | Layer | Where | Touches Dagster? | Role |
 |---|---|---|---|
-| 0 Config | `demo/scale-lib/config/*.yaml,*.json` | no | **External relationship files** — edit these to change relationships |
+| 0 Config | external `config/*.yaml,*.json` files (see `learn/20-multi-library-grain/`) | no | **External relationship files** — edit these to change relationships |
 | 1 Spec | `pipelines/spec/*.py` | no | Pure data: hierarchy, `PartitionRule` protocol + impls |
 | 2 Rules + Registry | `pipelines/rules/*.py`, `registry.py` | no | `DepRule.emit_edges()` → `DepEdge`; registry merges same-target edges; one source of truth |
 | 3 Translator | `pipelines/translator.py` | yes | `PartitionRule` → **built-in** `StaticPartitionMapping` / `IdentityPartitionMapping` / `SpecificPartitionsPartitionMapping` |
@@ -158,8 +160,10 @@ deps = [AssetDep(asset=AssetKey([lib, "step4"]), partition_mapping=_PARENT_MIRRO
 
 ### 3.4 Adopting this in your repo
 
-Copy the 5-layer skeleton from `demo/scale-lib/pipelines/`. Keep your relationship
-truth in `config/` + `rules/`; only `translator.py` + `factory.py` import Dagster.
+Copy the spec-driven skeleton from `spec_dagster/flows/_template/` (repo
+top-level; the framework path). For the distilled teaching version of the
+layered pattern, study `learn/20-multi-library-grain/pipelines/`. Keep your
+relationship truth in external config; only the framework layer imports Dagster.
 
 ---
 
@@ -354,7 +358,7 @@ concurrency "pools" are a newer-Dagster feature — do **not** assume they exist
 - API gotchas (incl. mapping deprecation): `memory/understanding/dagster-1.13.3-gotchas.md`
 - Partition mapping teaching: `learn/17-incremental-cross-partition/`
 - Canonical many-to-many: `learn/20-multi-library-grain/pipelines/edges.py`
-- Full reference implementation: `demo/scale-lib/`
+- Full reference implementation: `spec_dagster/` (repo top-level; `demo/scale-lib/` retired 2026-06)
 - Cluster execution via Pipes (small scale): `skills/lsf-executor/SKILL.md`, `learn/13-lsf-integration/` Part A
 - Large-scale custom `LSFRunLauncher` (>~thousands of concurrent runs): `learn/13-lsf-integration/` Part B
 - CLI / dagster.yaml / workspace.yaml: `skills/cli-cheatsheet/`, `skills/dagster-yaml-reference/`, `skills/workspace-yaml-reference/`

@@ -115,7 +115,7 @@ Reload / materialize / stale 三者的關係見
 | 18 | apl / pgv / cdk 多個 kit 跨 lib 邊界 (multi-team) |
 | 19 | TSMC AP 自動化目標 — upstream char output 一變, 下游 sign-off 自動跑對的 branch |
 
-`demo/scale-lib/` 是 1+2 的 production-shaped reference;
+`spec_dagster/`(repo top-level)是 1+2 的 production-shaped reference(原 demo/scale-lib 已退役);
 3 還沒接上去 (因為公司端 daemon / scheduler 還沒到位). 未來補上, 接 19 的 EAGER policy 即可.
 
 ## 不在這份指南內的東西

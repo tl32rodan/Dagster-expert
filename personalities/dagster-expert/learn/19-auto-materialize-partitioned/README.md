@@ -224,5 +224,5 @@ painpoint in the two-tier framing (`memory/understanding/why-two-tier.md`):
 Combine lessons 17 + 18 + 19 in your head: cross-partition,
 cross-location, auto-materialized. That's the entire
 "incremental change event" surface area for the AP flow. The
-canonical production reference for all three is `demo/scale-lib/`
-in this repo.
+canonical production reference for all three is the spec-driven
+framework at `spec_dagster/` (repo top-level).

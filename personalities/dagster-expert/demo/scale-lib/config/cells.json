@@ -1,7 +1,0 @@
-{
-  "library": "lib_a",
-  "cells": [
-    "INV", "BUF", "AND2", "OR2", "NAND2", "NOR2", "XOR2",
-    "DFF", "LATCH", "MUX2", "AOI22", "OAI22"
-  ]
-}

@@ -6,16 +6,17 @@ Dagster.
 
 ## Getting Started Path — for AP engineers (~3 hours)
 
-Read these in order. You'll cover the core mechanics that make
-the `demo/scale-lib/` reference implementation make sense.
+Read these in order. You'll cover the core mechanics behind the
+spec-driven framework at `spec_dagster/` (repo top-level) and the
+production-scale patterns distilled in lesson 20.
 
 | # | Lesson | Time | Why |
 |---|---|---|---|
 | 1 | [`01-asset-and-materialize`](01-asset-and-materialize/) | 30m | What's an `@asset`? What does "Materialize" do? |
 | 2 | [`02-deps-and-lineage`](02-deps-and-lineage/) | 30m | How does Dagster know A depends on B? |
 | 3 | [`03-partitions`](03-partitions/) | 45m | **The TSMC branch model lives here**: 46 branches = 46 partition keys on one asset. |
-| 4 | [`12-scaling/`](12-scaling/) (just `compact/` subdir) | 60m | **The folder-as-asset pattern in miniature**: 1 asset per step + (lib×branch) as MultiPartitions. This is the architecture `demo/scale-lib/` uses at production scale. |
-| Done | Read `demo/scale-lib/README.md` and `demo/scale-lib/WHAT_IS_REAL.md` | 30m | See the full pattern in context. Skip the rest until you need them. |
+| 4 | [`12-scaling/`](12-scaling/) (just `compact/` subdir) | 60m | **The folder-as-asset pattern in miniature**: 1 asset per step + (lib×branch) as MultiPartitions. Lesson 20 shows the same architecture at production scale. |
+| Done | Read `../../spec_dagster/README.md` + `ONBOARDING.md` (repo top-level) | 30m | See the full pattern as a verified, spec-driven framework. Skip the rest until you need them. |
 
 Optional add-ons (in priority order for AP work):
 

@@ -125,4 +125,4 @@ ls -la /tmp/dagster-17a-out/
 → **17b** — what if upstream and downstream have DIFFERENT
 partition sets and you need to wire them with
 `StaticPartitionMapping`? That's the production case
-(`demo/scale-lib/` does this for branch → branch).
+(the retired `demo/scale-lib/` reference did this for branch → branch).

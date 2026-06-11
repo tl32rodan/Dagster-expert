@@ -177,5 +177,5 @@ part of its `verify` tick when converting a flow.
 
 You've now seen all three flavors of cross-partition incremental
 behavior. Read `learn/17-incremental-cross-partition/README.md`
-for the summary table and where each pattern lives in
-`demo/scale-lib/`.
+for the summary table; the production form of each pattern lives
+in `spec_dagster/` and `learn/20-multi-library-grain/`.
