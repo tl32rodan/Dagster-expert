@@ -1,54 +1,47 @@
 version: 1
-flow_name: liberate-char
+flow_name: liberate_char
 
 dimensions:
   pvt:  { type: static, values: [tt_25, ff_125, ss_m40] }
   cell: { type: static, values: [INV, BUF, NAND2] }
 
 defaults:
-  dispatch: local            # local-sim: PipesSubprocessClient + mock bsub on PATH
-  version: content_hash      # generator data_version = SHA256[:16] of output content
-  trigger: automation        # AutomationCondition.eager() — cascade from `start`
+  version: content_hash       # generator data_version = SHA256[:16] of content
+
+lsf:
+  default: { queue: normal, cores: 4, mem_mb: 4096, walltime: "24:00" }
 
 assets:
-  # Single root entry: materialize this and AssetDaemon cascades the rest.
   - { name: start, kind: entry, partitioned_by: [] }
 
-  # Generators each depend on `start` (mapping: all) so cascade has a single entry.
   - name: template_tcl
     kind: generator
     script: flows.liberate_char.script:gen_template
     partitioned_by: [pvt]
-    depends_on:
-      - { asset: start, mapping: all }
+    depends_on: [{ asset: start, mapping: all }]
   - name: section_tcl
     kind: generator
     script: flows.liberate_char.script:gen_sections
     partitioned_by: [pvt]
-    depends_on:
-      - { asset: start, mapping: all }
+    depends_on: [{ asset: start, mapping: all }]
   - name: model_card
     kind: generator
     script: flows.liberate_char.script:gen_modelcard
     partitioned_by: [pvt]
-    depends_on:
-      - { asset: start, mapping: all }
+    depends_on: [{ asset: start, mapping: all }]
   - name: netlist
     kind: generator
     script: flows.liberate_char.script:gen_netlist
     partitioned_by: [cell]
-    depends_on:
-      - { asset: start, mapping: all }
+    depends_on: [{ asset: start, mapping: all }]
   - name: cell_list
     kind: generator
     script: flows.liberate_char.script:gen_cell_list
-    depends_on:
-      - { asset: start, mapping: all }
+    depends_on: [{ asset: start, mapping: all }]
   - name: main_tcl
     kind: generator
     script: flows.liberate_char.script:gen_main_tcl
-    depends_on:
-      - { asset: start, mapping: all }
+    depends_on: [{ asset: start, mapping: all }]
 
   - name: characterize
     kind: compute

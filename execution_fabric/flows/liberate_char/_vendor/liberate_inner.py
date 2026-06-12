@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
-"""Pipes-aware inner process (run on the compute node by the mock bsub).
+"""Inner process (runs ON the LSF node, invoked by fabric_worker.py).
 
-Self-contained (stdlib + dagster_pipes): assembles a per-leaf main.tcl +
-run.txt, invokes the mock `liberate`, parses the .ldb digest, and reports
-it as the asset's data_version via Pipes. Vendored + inlined from
-converted/core/liberate_inner.py so it can run by path with no package
-imports.
+Assembles a per-leaf main.tcl + run.txt, invokes the mock `liberate`,
+and exits 0 on success / non-zero on failure. The fabric_worker wrapper
+reads the produced `.ldb` digest and writes it as data_version to the
+status DB — this script no longer reports to Dagster (per the
+non-blocking pull model; WHITEPAPER §3.5).
 """
 import argparse
 import subprocess
 import sys
 from pathlib import Path
-
-from dagster_pipes import open_dagster_pipes
 
 
 def gen_main_tcl_leaf(root: str, pvt: str) -> str:
@@ -46,36 +44,23 @@ def main() -> int:
     ap.add_argument("--liberate", required=True)
     args = ap.parse_args()
 
-    with open_dagster_pipes() as pipes:
-        work = Path(args.work_dir)
-        work.mkdir(parents=True, exist_ok=True)
-        main_tcl = work / "main.tcl"
-        run_scr = work / "run.txt"
-        main_tcl.write_text(gen_main_tcl_leaf(args.sources_root, args.pvt))
-        run_scr.write_text(
-            gen_run_scr_leaf(args.sources_root, args.pvt, args.cell,
-                             args.out_dir, str(main_tcl))
-        )
+    work = Path(args.work_dir)
+    work.mkdir(parents=True, exist_ok=True)
+    main_tcl = work / "main.tcl"
+    run_scr = work / "run.txt"
+    main_tcl.write_text(gen_main_tcl_leaf(args.sources_root, args.pvt))
+    run_scr.write_text(
+        gen_run_scr_leaf(args.sources_root, args.pvt, args.cell,
+                         args.out_dir, str(main_tcl))
+    )
 
-        pipes.log.info(f"liberate_inner: characterizing {args.pvt}/{args.cell}")
-        r = subprocess.run(
-            [sys.executable, args.liberate, "-scr", str(run_scr)],
-            capture_output=True, text=True,
-        )
-        if r.returncode != 0:
-            pipes.log.error(f"liberate failed: {r.stderr.strip()}")
-            return r.returncode
-
-        ldb = Path(args.out_dir) / f"{args.pvt}__{args.cell}.ldb"
-        digest = "unknown"
-        for line in ldb.read_text().splitlines():
-            if line.startswith("digest "):
-                digest = line.split()[1]
-        pipes.report_asset_materialization(
-            data_version=digest,
-            metadata={"pvt": args.pvt, "cell": args.cell, "ldb": str(ldb)},
-        )
-    return 0
+    r = subprocess.run(
+        [sys.executable, args.liberate, "-scr", str(run_scr)],
+        capture_output=True, text=True,
+    )
+    sys.stdout.write(r.stdout)
+    sys.stderr.write(r.stderr)
+    return r.returncode
 
 
 if __name__ == "__main__":

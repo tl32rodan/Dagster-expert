@@ -1,0 +1,42 @@
+# Dagster instance config for the Execution Fabric (WHITEPAPER §3.4).
+#
+# Production: copy this and override `storage` to point at PostgreSQL
+# (`storage.postgres.postgres_db.…`). Local-sim leaves storage default
+# (SQLite at $DAGSTER_HOME).
+#
+# `dagster-webserver` is intentionally NOT used in production
+# (WHITEPAPER §2.3); only the daemon. The dispatch + harvest sensors are
+# both `default_status: RUNNING`, so they tick without UI interaction.
+
+run_launcher:
+  module: dagster._core.launcher
+  class: DefaultRunLauncher
+
+run_coordinator:
+  module: dagster._core.run_coordinator
+  class: QueuedRunCoordinator
+  config:
+    # Dispatch and harvest sensor runs are short (asset bodies fire bsub
+    # and return; harvest never enqueues). Tiny limit is correct here —
+    # real LSF capacity is the ceiling, not the orchestrator's.
+    max_concurrent_runs: 8
+    dequeue_use_threads: true
+    dequeue_num_workers: 4
+
+run_monitoring:
+  enabled: true
+  start_timeout_seconds: 180     # short — these runs ARE short
+  poll_interval_seconds: 60
+
+telemetry:
+  enabled: false
+
+# storage:  # Phase 2: PostgreSQL
+#   postgres:
+#     postgres_db:
+#       hostname: pg.internal
+#       username: dagster
+#       password:
+#         env: DAGSTER_PG_PASSWORD
+#       db_name: dagster
+#       port: 5432
