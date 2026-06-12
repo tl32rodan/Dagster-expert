@@ -1,15 +1,7 @@
 <!-- allmight_l1_cap=4096 -->
 <!--
-  L1 (MEMORY.md) is **portable-only** memory: what is true and useful no
-  matter which corpus you work on. Keep it tight; over-cap triggers a
-  passive nudge, not auto-eviction.
-
-  Scope test: "still relevant in any workspace?" If no → not L1.
-
-  Everything else belongs elsewhere:
-  - Corpus-specific knowledge → memory/understanding/<workspace>.md
-  - Open TODOs / session continuity → memory/<kind>/<workspace>.md
-  - Searchable history → memory/journal/<workspace>/
+  L1 (MEMORY.md) is portable-only memory: what is true and useful no
+  matter which corpus you work on. Keep it tight.
 -->
 
 # Project Memory
@@ -17,109 +9,96 @@
 > **Default personality**: dagster-expert
 > **Active personality**: dagster-expert
 
-## Project Map
+## Project map
 
-| Personality | Capabilities | Scope | Active focus |
-|-------------|--------------|-------|--------------|
-| dagster-expert | database, memory | Dagster 1.13.3 air-gap: TEACHER (20 lessons) + OPERATOR (bootstrap/diagnose) + LIBRARIAN (offline API lookup); merged from `dagster-operator` + `dagster-tutor` + `dagster-librarian` v3 bundles | *(set by agent via /remember; see `personalities/dagster-expert/STATUS.md`)* |
-| flow-cartographer | memory, schedule | Given any execution flow (`$FLOW_SRC` + `CONVERSION.md`), runs a scheduled plan→build→verify→reflect loop that converts it to Dagster 1.13.3 one verified increment at a time. Evolved from the retired `dagster-ap-auditor`; reads dagster-expert's corpus/lessons/demo, never duplicates. | *(set by agent via /remember; see `personalities/flow-cartographer/STATUS.md`)* |
+| Personality | Capability | Scope |
+|---|---|---|
+| dagster-expert | librarian | Dagster **1.13.7** air-gap: API + architecture + usage corpus. ONE skill: `skills/dagster-1.13.7-airgap`. |
+| flow-cartographer | migration coach | Walks users through `/WHITEPAPER.md §5` (TDD + Clean Code recipe) for porting an existing pipeline onto the Execution Fabric. |
 
-See each personality's `STATUS.md` for richer rolling state
-(active focus, recent topics, open threads). The "Active focus"
-column above is a one-line summary; STATUS.md has the long form.
-See `memory/understanding/<workspace>.md` for detailed per-corpus
-knowledge.
+## User preferences
 
-## User Preferences
-
-- Shell is **tcsh** (use `setenv` syntax first in any shell example;
-  show `export` for bash in parentheses).
+- Shell: **tcsh** (use `setenv` first; show `export` in parentheses).
 - Air-gapped TSMC workstation: no internet at runtime, no public PyPI /
-  Docker registries, no Dagster+ / Cloud, no `uv` / `dg` / k8s.
-- Primary agent runtime is **Minimax M2.5** (or similar less-capable
-  agents). Personality instructions are mechanical / checklist-driven
-  rather than judgment-based. See
-  `personalities/dagster-expert/PRE_FLIGHT_CHECKLIST.md`.
-- **Graph-theory terminology over domain-specific labels** in
-  abstractions: use `parent_of` / `is_root` / `ancestors_of` rather
-  than `corner_of` / `is_corner`. The branch literally named ``corner``
-  keeps its name; the role is ``root``.
-- **Cardinality math first** when scaling: enumerate the total leaf count
-  (branches × steps × cells × PVTs × ...) before committing to a
-  partition / asset design. The math drives the tier-boundary, not the
-  framework's API surface.
+  Docker registries, no Dagster+ / Cloud / dg / uv / k8s.
+- Primary agent runtime: **Minimax M2.5** (or similar). Instructions
+  are mechanical / checklist-driven, not judgment-based.
+- **Graph-theory terminology over domain-specific labels**:
+  `parent_of` / `is_root` / `ancestors_of` rather than `corner_of` /
+  `is_corner`.
+- **Cardinality math first** when scaling: enumerate the leaf count
+  (branches × steps × cells × PVTs × …) before committing to a
+  partition / asset design.
+- **TDD + Clean Code** are the migration methodology (WHITEPAPER §5).
 
-## Active Goals
+## Key facts
 
-- Walk through Dagster 1.13.3 lessons end-to-end without skipping
-  per-lesson DAGSTER_HOME isolation or the librarian-consult-before-code
-  hard rule.
+- Dagster version: **1.13.7** (was 1.13.3 through 2026-06-11; bumped).
+- Architecture: **Execution Fabric** = non-blocking LSF client + status
+  DB (SQLite Phase 1 → PostgreSQL+Kafka Phase 2) + dispatch & harvest
+  sensors. **No** custom RunLauncher; **no** in-asset Pipes.
+- Status DB execution truth ≠ Dagster materializations (the dispatch
+  asset body's auto-emitted placeholder is misleading). The dispatch
+  sensor reads `observed` from status DB only.
+- Strategic source of truth: `/WHITEPAPER.md` (root).
+- Framework code: `execution_fabric/`.
+- 1.13.7 corpus: `personalities/dagster-expert/database/dagster-1.13.7/`.
 
-## Key Facts
+## Active goal
 
-- Dagster version is pinned at **1.13.3** across all examples,
-  cheatsheets, and lesson code.
-- `DAGSTER_HOME` is **per-lesson** in TEACHER mode
-  (`~/.dagster-tutor/<NN-topic>`) and **fixed** in OPERATOR mode
-  (`/var/lib/dagster` for prod, `~/.dagster` for dev).
-- SMAK vector indices (`personalities/*/database/*/store/`,
-  `personalities/*/memory/store/`) are gitignored and rebuilt by
-  `/ingest`.
+Get the Execution Fabric framework verified at production scale
+(>10k+ runs) on the real LSF cluster. Phase 2 (Postgres + Kafka +
+reaper + worker pool) is the next milestone after Phase 1 (SQLite +
+file lock) demo passes on multi-host LSF.
 
-## Lessons learned — designing personalities for less-capable agents
+## Hard rules carried by both personalities
 
-Captured 2026-05-11 during the build of `dagster-expert`. The goal
-was a single personality that **Minimax M2.5 / Kimi K2.5** can drive
-without skipping pre-conditions. Three Haiku-as-Minimax dry runs
-(TEACHER / OPERATOR / LIBRARIAN modes) all passed 8/8 criteria after
-applying the rules below.
+1. **No Dagster API from training memory.** Cite
+   `database/dagster-1.13.7/` or refuse.
+2. **No private imports** (`dagster._core.*` / `_internal.*` / `_private.*`).
+3. **Air-gap only** — refuse `uv` / `dg` / Cloud / Components / k8s /
+   public PyPI / Docker registries / telemetry.
+4. **tcsh-first** shell syntax; bash in parens.
+5. **Absolute paths** (no `cd` chains).
+6. **No destructive ops** without explicit user consent.
 
-### 1. Mechanical triggers over judgment
-A rule like "always consult librarian first" gets skipped by
-less-capable agents because they don't know when to apply it. Rewrite
-the same rule as a mechanical regex trigger:
-> Before writing any line matching `^from dagster import`, run the
-> mechanical lookup sequence. 0 results ⇒ REFUSE.
+## Lessons learned (carried over from earlier eras)
 
-### 2. Pre-flight as a standalone file, not a paragraph
-A multi-paragraph "always do X first" gets paraphrased away. A
-standalone `PRE_FLIGHT_CHECKLIST.md` with 7 numbered boxes the agent
-must tick **out loud** does not.
+### Designing personalities for less-capable agents
 
-### 3. Mode decision tree at the top of ROLE.md
-The first action on any request is matching trigger words against a
-table; the first match wins; the mode is declared out loud and
-carried through the conversation. No judgment, just match.
+Captured 2026-05-11; survived the 2026-06-12 restructure because they're
+about agent design, not about Dagster.
 
-### 4. Shell-aware command blocks
-The user's session is **tcsh**. Always show `setenv VAR value` first
-and `export VAR=value` in parentheses. Less-capable agents will
-otherwise copy the bash-only `export …` and the user will paste it
-into tcsh where it fails silently.
+1. **Mechanical triggers over judgment.** Rewrite "always consult
+   librarian first" as "before writing `^from dagster import`, run the
+   mechanical lookup sequence; 0 results ⇒ REFUSE".
+2. **Refusal as a feature.** Hard rules become refusals with exact
+   remediation, not best-effort warnings.
+3. **Visible state checkpoints.** Print `echo $DAGSTER_HOME`, `which
+   dagster`, `dagster --version` at the start of multi-step tasks.
+4. **Shell-aware command blocks.** tcsh `setenv` first; bash `export`
+   in parentheses.
+5. **Absolute paths only.** No `cd` chains.
+6. **Pair every command with its verify command + expected output.**
 
-### 5. Absolute paths only — no `cd` chains
-Every `dagster` command takes `-w /abs/path/to/workspace.yaml`. `cd`
-chains break when the agent reasons about pwd state across turns.
+### Architecture design (added 2026-06-12)
 
-### 6. Verify-after-each-step
-Every command is paired with its verify command and the expected
-output. The agent reads the output before continuing.
+- **Dagster lineage vs execution must be cleanly separated** for
+  10k+ scale. Lineage stays in Dagster (DataVersion + harvest sensor);
+  execution lives in the Execution Fabric (status DB + non-blocking
+  LSF client + fabric worker).
+- **Status DB > Dagster materializations as execution truth.** The
+  dispatch asset body returning None auto-emits a placeholder
+  materialization; trusting that for `observed` would stop redispatch
+  before any real computation. Dispatch sensor reads status DB only.
+- **Harvest sensor is the most fragile module.** Cursor advances ONLY
+  after both `report_runless_asset_event` AND `mark_harvested` succeed.
+  Partial failure preserves prefix, leaves suffix for next tick.
+  Over-test this one (`test_harvest_sensor.py` has 6 cases).
+- **Idempotency key = `sha256(asset, partition, sorted(upstream_data_versions))`.**
+  One key serves three fault contracts (dispatch dedup, orphan
+  recovery, harvest idempotency).
+- **`define_asset_job` rejects mixed partition shapes** in one
+  selection. Build one job per asset (or per shape).
 
-### 7. Refusal as a feature
-Hard rules become refusals with the exact remediation, not best-effort
-warnings. "Refuse to launch dagster if `echo $DAGSTER_HOME` is empty;
-the remediation is `setenv DAGSTER_HOME …`".
-
-### 8. Visible state checkpoints
-At the start of any multi-step task, print `echo $DAGSTER_HOME`,
-`which dagster`, `dagster --version`. The human + agent can both see
-state instead of inferring it.
-
-### Bug found during validation that informed the final design
-- **Per-lesson DAGSTER_HOME isolation.** Initial design used one shared
-  `~/.dagster-tutor` for all 11 lessons; storage and runs would pollute
-  across lessons. The user flagged this; final design pins
-  `~/.dagster-tutor/<NN-topic>` per lesson, with a reminder baked into
-  ROLE.md TEACHER mode, `PRE_FLIGHT_CHECKLIST.md` Box 2, and
-  `learn/ENV_SETUP.md` Step 1. The agent must re-set `DAGSTER_HOME`
-  every time the learner switches lessons.
+See `/WHITEPAPER.md` for the full architecture.

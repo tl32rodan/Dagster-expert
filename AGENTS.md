@@ -1,93 +1,68 @@
-# Dagster-expert
+# Dagster-expert — agent map
 
-Air-gapped Dagster 1.13.3 agent project — All-Might v4 personalities
-designed for less-capable agents (Minimax M2.5, Kimi K2.5) running on
-TSMC air-gap workstations. Two personalities co-exist:
+Air-gapped Dagster 1.13.7 framework + librarian. Two minimal
+personalities; one strategic doc; one worked example.
 
-- `dagster-expert` — daily driver. Three internal modes: **TEACHER**
-  (20 lessons), **OPERATOR** (bootstrap / diagnose), **LIBRARIAN**
-  (offline API lookup).
-- `flow-cartographer` — given any execution flow (`$FLOW_SRC` +
-  `CONVERSION.md`), runs a scheduled **plan → build → verify →
-  reflect** loop that converts it to Dagster 1.13.3 one verified
-  increment at a time, until the charter's success criteria are met.
-  Its first action every session/tick is the Wake SOP (not a
-  trigger-word match). Evolved from the retired `dagster-ap-auditor`
-  acceptance gatekeeper, whose mechanical guardrails survive as the
-  `verify` tick's self-check. Reads `dagster-expert`'s
-  `database/dagster-1.13.3/` and `learn/` material
-  as ground truth; never duplicates it.
-
-## Personalities
-
-| Name | Capabilities | Source of truth |
+| Personality | Capability | What it does |
 |---|---|---|
-| dagster-expert | database, memory | `personalities/dagster-expert/ROLE.md` |
-| flow-cartographer | memory, schedule | `personalities/flow-cartographer/ROLE.md` |
+| `dagster-expert` | librarian over `database/dagster-1.13.7/` | Answer "what's the API for X in 1.13.7?", "how do I configure dagster.yaml on this air-gap deploy?" |
+| `flow-cartographer` | migration coach | Walk users through `/WHITEPAPER.md §5` (TDD + Clean Code recipe for porting an existing pipeline onto the Execution Fabric) |
 
-## Where the workflow & instructions live
+## Source of truth (single)
 
-**For Dagster teaching / operating / API lookup:**
-`personalities/dagster-expert/ROLE.md`. Mode Decision Tree at top
-(TEACHER / OPERATOR / LIBRARIAN), pre-flight pointer to its
-`PRE_FLIGHT_CHECKLIST.md` (7 boxes), per-mode workflows, hard rules,
-tcsh-first shell syntax, per-lesson `DAGSTER_HOME` isolation.
+**`/WHITEPAPER.md`** is the strategic source of truth for everything
+about how the framework works. Personalities point at it; they don't
+duplicate it.
 
-**For converting an execution flow to Dagster:**
-`personalities/flow-cartographer/ROLE.md`. The §0 Wake SOP is the first
-action every session and every scheduled tick — read the handoff
-(`STATUS.md` + `flow-model/_plan.yaml`), re-read ROLE, route to one tick
-loop, run it, write the handoff. Driven by `CONVERSION.md` (the charter)
-+ `$FLOW_SRC`, not by trigger words.
+The framework code at **`execution_fabric/`** implements it:
+- `framework/spec/`, `framework/assets/`, `framework/versioning/` — M1+M2
+- `framework/sensor/{dispatch,harvest}.py` — M3 (replaces v1 reconcile/cascade)
+- `framework/fabric/{status_db,file_lock,lsf_run_client}.py` — M4 (the
+  Execution Fabric layer)
+- `flows/liberate_char/{spec.yaml, script.py, fabric_worker.py}` — M5
+  worked example
 
-The `role-load` hook injects ALL `personalities/*/ROLE.md` files at
-every chat turn, so both ROLEs are in context simultaneously.
-`dagster-expert` answers teaching/operating/lookup questions by its
-trigger table; `flow-cartographer` runs the conversion loop. If the
-user says "switch to <other>", that's the explicit handover.
+The 1.13.7 corpus at **`personalities/dagster-expert/database/dagster-1.13.7/`**
+is the librarian's source for Dagster API claims. Every claim cites a
+file there.
 
-Companion files alongside each `ROLE.md`:
-- standalone drift-resilient copy — `dagster-expert`'s
-  `MODE_DECISION_TREE.md`; `flow-cartographer`'s `TICK_GUIDE.md`
-- `PRE_FLIGHT_CHECKLIST.md` — mandatory session boxes
-- `manifest.yaml` — capabilities + `derived_from` lineage
-- `QUICKSTART.{en,zh}.md` — bilingual user-facing intro
-- `memory/lessons_learned/_inbox/` — case study write target
+## Personality switching
 
-`dagster-expert` adds: `learn/ENV_SETUP.md` (per-lesson
-DAGSTER_HOME), `database/dagster-1.13.3/` (API corpus), `skills/`
-(custom skills). The former `demo/` production reference was retired
-2026-06-11; that role now lives in `spec_dagster/` (repo top-level).
+Internal, no CLI. Tell the agent "switch to flow-cartographer" when
+you start a migration; "switch to dagster-expert" when you need a
+Dagster API lookup. Both `ROLE.md` files are injected at every turn
+(via the `role-load` hook in All-Might-aware harnesses).
 
-`flow-cartographer` adds: `CONVERSION.md` (the user-owned charter),
-`flow-model/` (live conversion state: ledger `_plan.yaml`, step nodes,
-`_operations.log`, `_open_questions.yaml`), `skills/{wake,plan-loop,
-build-loop,verify-loop,reflect-loop}/` (the loop SOPs), `scheduled/`
-(the four `am-flow-cartographer-<tick>` task declarations),
-`conversion-coverage/0N-….md` (the 5 behavioral aspects a conversion
-must cover — repurposed from the old audits), `standards/` + `smoke/`
-(verify-tick inputs).
+## Hard rules (both personalities)
 
-## Why this `AGENTS.md` is minimal (and hand-curated)
+1. **No Dagster API from training memory.** Cite `database/dagster-1.13.7/`
+   or refuse.
+2. **No private imports** (`dagster._core.*`, `_internal.*`, `_private.*`).
+3. **Air-gap only**: no `uv` / `dg` / `pipx` / Cloud / Components / k8s
+   / public PyPI / Docker registries / telemetry.
+4. **tcsh-first** shell syntax (`setenv VAR value`); bash in parens.
+5. **Absolute paths** (no `cd` chains).
+6. **No destructive ops** (`run wipe`, `asset wipe`, dropping Postgres
+   tables) without explicit user consent.
 
-`/all-for-one` and `/one-for-all` skills bundle and merge `ROLE.md`, not
-`AGENTS.md`. Keeping `AGENTS.md` as a thin pointer (no `<!-- all-might
-generated -->` marker, intentionally hand-authored) makes:
+## What this repo is NOT
 
-- the personality cleanly bundleable via `/one-for-all`
-- the workflow/instructions discoverable in exactly one place (`ROLE.md`)
-- this file safe from auto-regeneration on `allmight init` re-runs (the
-  framework only overwrites files carrying its marker)
+- A general-purpose Dagster tutorial (the 20-lesson `learn/` curriculum
+  was retired 2026-06-12; the demo and v1 push-based architecture went
+  with it).
+- A bundle to ship to other projects via `/one-for-all` (the corpus
+  references the framework, so they travel together or not at all).
+- A reference for `dg` / Components / Dagster+ — `docs.dagster.io`
+  remains the source for those; air-gap users use plain `dagster`.
 
-If you ever do want the verbose auto-composed form back, run `allmight
-init . --force` and re-add the personality; the framework will
-regenerate `AGENTS.md` from `ROLE.md`.
+## Contributing
 
-## Project-wide capability docs
-
-For `database` (knowledge graph: `/search`, `/enrich`, `/ingest`,
-`/onboard`, `/sync`, `/one-for-all`, `/all-for-one`) and `memory`
-(L1/L2/L3 + `/remember`, `/recall`, `/recover`) skills, see
-`.opencode/skills/` and `.opencode/commands/`. Those are framework
-globals shared across all personalities and not specific to
-dagster-expert.
+- **API gap** discovered while answering: open
+  `personalities/dagster-expert/memory/lessons_learned/_inbox/<ISO>-<user>.md`.
+  Curator promotes to a new `docs/<topic>.md`.
+- **Framework code**: open a PR against the relevant module in
+  `execution_fabric/framework/`. Test coverage required for any code
+  touching the fabric layer (especially harvest sensor).
+- **WHITEPAPER.md changes**: discuss before landing. The whitepaper
+  is the architecture contract; changes propagate to ROLE.md, the
+  skill, and tests.

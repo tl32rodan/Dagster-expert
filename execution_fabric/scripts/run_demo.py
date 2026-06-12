@@ -102,7 +102,10 @@ def count_dagster_materializations(instance) -> int:
 
 def start_daemon():
     env = dict(os.environ)
-    env["PATH"] = f"{VENDOR_BIN}:{env.get('PATH', '')}"   # mock bsub on PATH
+    # Tell the flow's definitions.py to use the mock bsub at a known path
+    # (PATH-based PATH inheritance is unreliable across the daemon→grpc
+    # code server→run worker process chain).
+    env["FABRIC_USE_MOCK_BSUB"] = "1"
     env["PYTHONPATH"] = str(ROOT)
     log_f = open(DAGSTER_HOME / "daemon.log", "w")
     daemon_bin = Path(sys.executable).parent / "dagster-daemon"

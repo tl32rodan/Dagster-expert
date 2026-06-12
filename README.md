@@ -1,132 +1,110 @@
-# Dagster-expert
+# Dagster-expert — Execution Fabric for Dagster 1.13.7 on LSF
 
-An air-gapped **Dagster 1.13.3** agent project — a set of
-[All-Might](https://github.com/tl32rodan/All-Might) **v4 personalities**
-for working with [Dagster](https://dagster.io) on machines with no
-internet (no `docs.dagster.io`, no public PyPI, no Dagster+ / Cloud).
-Built for **less-capable agents** (MiniMax M2.5, Kimi K2.5, offline
-Claude / GPT) driving TSMC air-gap workstations, so the instructions are
-mechanical and checklist-driven rather than "model thinks hard".
+A self-contained framework for orchestrating large-scale EDA
+characterization on an air-gapped TSMC workstation, layered on
+**Dagster 1.13.7** + **LSF**. Three deliverables live here:
 
-Two personalities live side by side under `personalities/`:
+| What | Where |
+|---|---|
+| Strategic architecture white paper | [`WHITEPAPER.md`](WHITEPAPER.md) |
+| Framework code + worked example | [`execution_fabric/`](execution_fabric/) |
+| Dagster 1.13.7 air-gap corpus + one skill | [`personalities/dagster-expert/`](personalities/dagster-expert/) |
 
-| Personality | Capabilities | What it does |
-|---|---|---|
-| [`dagster-expert`](personalities/dagster-expert/) | database, memory | Daily driver. One personality, three internal modes — **TEACHER** (20 progressive lessons), **OPERATOR** (bootstrap / run / diagnose a self-hosted air-gap deployment), **LIBRARIAN** (offline public-API lookup). |
-| [`flow-cartographer`](personalities/flow-cartographer/) | memory, schedule | Given any execution flow (`$FLOW_SRC` + a `CONVERSION.md` charter), runs a scheduled **plan → build → verify → reflect** loop that converts it to Dagster 1.13.3 one verified increment at a time, until the charter's success criteria are met. |
+## What problem does this solve
 
-`dagster-expert` was assembled by merging three earlier v3 bundles
-(`dagster-operator` + `dagster-tutor` + `dagster-librarian`) into a single
-mode-switching personality. `flow-cartographer` evolved in place from the
-retired `dagster-ap-auditor`; it **reads** `dagster-expert`'s API corpus,
-lessons, and demo as ground truth and never duplicates them.
+EDA characterization runs 10k+ cell-level computations per release;
+~1% need rerunning when an input changes. Dagster's `DataVersion` +
+asset graph is the right tool for that incremental rerun. **But**
+Dagster's push-based RunLauncher model can't dispatch 10k long-lived
+run workers — the daemon's launch throughput becomes the bottleneck.
 
-> Mode / personality switching is internal: tell the agent "switch to
-> OPERATOR" or "switch to flow-cartographer". There is no CLI command —
-> the agent routes by the Mode Decision Tree at the top of each `ROLE.md`.
+**The pivot**: Dagster owns *lineage*; we own *execution*.
+- The asset body fires a non-blocking `bsub` and returns immediately.
+- A separate fabric worker on the LSF node runs the script, computes
+  the data_version from its output, and writes SUCCESS to a status DB.
+- A harvest sensor reads status DB SUCCESS rows and reports them as
+  AssetMaterializations to Dagster (via `report_runless_asset_event`).
 
-## Why this exists
+Status DB: **SQLite Phase 1, PostgreSQL Phase 2**.
 
-LLM agents in air-gap deployments default to **generating Dagster API
-code from training memory**. For Dagster — which had multiple API renames
-between 1.0 and 1.13 (`logical_version` → `data_version`,
-`MaterializeResult` arg expansion, `MultiPartitionsDefinition`'s 2-axis
-limit, etc.) — that produces confident-but-wrong code. Three real failure
-modes from a single Lesson 02 walkthrough:
+Full rationale + design in [`WHITEPAPER.md`](WHITEPAPER.md).
 
-- Used `dagster._core.definitions.data_version.extract_data_version_from_entry` (private path)
-- Read tag `dagster/logical_version` (renamed → `dagster/data_version` in 1.13)
-- Wrote `MultiPartitionsDefinition({a, b, c})` (1.13.3 limit: 2 dimensions)
+## Quick verification (end-to-end)
 
-The fix is a hard rule both personalities carry:
+```tcsh
+setenv DAGSTER_HOME /tmp/fabric-demo
+setenv LIBERATE_DAG_ROOT /tmp/fabric-demo/dag
+setenv FABRIC_USE_MOCK_BSUB 1
+cd execution_fabric
+setenv PYTHONPATH $PWD
+python -m scripts.run_demo
+```
+(bash: `export DAGSTER_HOME=… ; export …`)
 
-> **Never generate Dagster API code from training memory.** Before writing
-> or recommending an API, EITHER `Read
-> personalities/dagster-expert/database/dagster-1.13.3/docs/<topic>.md`,
-> OR search the LIBRARIAN corpus with the `lookup-api` skill. Zero
-> results ⇒ refuse, don't guess.
+Expected (≤ 5 minutes):
+- 9/9 SUCCESS rows in `$DAGSTER_HOME/fabric_status.db`
+- 9/9 `AssetMaterialization` for `characterize` in Dagster's event log
+- 9 `.ldb` files in `$LIBERATE_DAG_ROOT/out/`
+- Banner: `Execution Fabric demo: PASS`
 
-The LIBRARIAN corpus
-(`personalities/dagster-expert/database/dagster-1.13.3/`) holds the
-cheatsheet `docs/` + runnable `examples/`, each documenting a known
-gotcha; `flow-cartographer`'s `verify` tick enforces the same
-public-API-only check on every increment it builds.
+## Repo layout
+
+```
+WHITEPAPER.md                       # the strategic doc
+execution_fabric/                   # the framework
+  framework/
+    spec/                           # M1: schema + loader
+    assets/                         # M2: builder + partition/mapping helpers
+    versioning/                     # content_hash
+    sensor/                         # M3: dispatch + harvest sensors
+    fabric/                         # M4: status_db, file_lock, lsf_run_client
+    generator.py                    # spec → Definitions
+    config/dagster.fabric.yaml      # DefaultRunLauncher + QueuedRunCoordinator
+  flows/liberate_char/              # M5 worked example (3 pvt × 3 cell)
+    spec.yaml, script.py
+    fabric_worker.py                # runs on LSF node; reads .ldb digest
+    _vendor/                        # mock bsub.py + mock liberate.py
+  tests/                            # 52 tests, all green against 1.13.7
+  scripts/run_demo.py               # end-to-end demo (9/9 partitions)
+
+personalities/
+  dagster-expert/                   # 1.13.7 librarian (one skill)
+    database/dagster-1.13.7/docs/   # ARCHITECTURE, ASSETS_PARTITIONS,
+                                    # SENSORS, RUN_LIFECYCLE, AIRGAP_DELTAS
+    database/dagster-1.13.7/examples/  # 5 validated examples
+    skills/dagster-1.13.7-airgap/   # mandatory-consult skill
+  flow-cartographer/                # migration coach for /WHITEPAPER.md §5
+```
 
 ## Audience
 
-- **Humans** new to Dagster, especially in industrial / EDA flows
-  (CAD characterization, simulation pipelines).
-- **Less-capable internal LLM agents** (Kimi K2.5, MiniMax M2.5, offline
-  Claude / GPT) in corporate air-gap setups — these need explicit
-  examples + cheatsheets + mechanical pre-flight checklists, not
-  open-ended reasoning.
+- **Engineers** porting an existing EDA pipeline (Perl/shell/Python +
+  hand-rolled job scheduling) onto the framework. Start at
+  [`WHITEPAPER.md` §5 Migration Plan](WHITEPAPER.md#5-migration-plan).
+- **AI agents** (Minimax M2.5, Kimi K2.5, etc.) on air-gapped
+  workstations. They invoke the librarian via the skill at
+  `personalities/dagster-expert/skills/dagster-1.13.7-airgap/SKILL.md`
+  before writing any `from dagster import …` line.
 
-## Layout
+## Air-gap stance
 
-```
-personalities/
-  dagster-expert/              # database + memory; TEACHER / OPERATOR / LIBRARIAN
-    ROLE.md                    #   mode decision tree + per-mode workflow
-    learn/                     #   20 progressive lessons (01 → 20)
-    database/dagster-1.13.3/   #   offline API corpus: docs/ + examples/
-    skills/                    #   bootstrap-airgap, cli-cheatsheet, lookup-api, …
-  flow-cartographer/           # memory + schedule; the conversion loop
-    ROLE.md                    #   §0 Wake SOP (first action every tick)
-    CONVERSION.md              #   the user-owned charter ($FLOW_SRC + goals)
-    flow-model/                #   live conversion state (ledger, steps, open questions)
-    conversion-coverage/       #   the 5 behaviors a conversion must preserve
-    skills/                    #   wake, plan-loop, build-loop, verify-loop, reflect-loop
-    scheduled/                 #   the four am-flow-cartographer-<tick> tasks
-```
+- No internet at runtime.
+- No `dg` / `uv` / Components / Dagster+ / Cloud / k8s.
+- Wheelhouse pattern for pip (`pip install --no-index --find-links=~/wheelhouse X`).
+- tcsh-first shell syntax in every example; bash equivalent in parentheses.
 
-See `AGENTS.md` for the full map and
-`personalities/<name>/QUICKSTART.{en,zh}.md` for a per-personality intro
-(bilingual EN / 繁中).
-
-## Using these personalities
-
-This repository **is** an All-Might v4 project. Two ways to use it:
-
-- **Directly** — open it in an All-Might-aware harness; the `role-load`
-  hook injects every `personalities/*/ROLE.md`, so both personalities are
-  in context and you switch modes by asking.
-- **Transfer into another All-Might project** — bundle a personality with
-  the [`/one-for-all`](https://github.com/tl32rodan/All-Might) skill, then
-  absorb it on the target with `/all-for-one`. (That is how
-  `dagster-expert` itself was assembled from the three original bundles.)
-
-The LIBRARIAN's SMAK vector indices are gitignored and rebuilt locally
-from the corpus via the `database` capability's `/ingest` skill against
-`personalities/dagster-expert/database/dagster-1.13.3/config.yaml`. No
-internet is ever touched.
-
-## Air-gap deployment
-
-The personalities assume no internet at runtime. `dagster-expert`'s
-`skills/bootstrap-airgap/` walks through the wheelhouse pattern
-(`pip download` on a connected host → transfer → `pip install --no-index`
-on the air-gap host). The API corpus ships as markdown + Python in the
-repo and is ingested into SMAK on first use — nothing is fetched online.
+See [`personalities/dagster-expert/database/dagster-1.13.7/docs/AIRGAP_DELTAS.md`](personalities/dagster-expert/database/dagster-1.13.7/docs/AIRGAP_DELTAS.md)
+for the explicit delta list against `docs.dagster.io`.
 
 ## Versioning
 
-- Pinned to **Dagster 1.13.3** — every lesson + example is smoke-tested
-  against this version.
-- All-Might **schema v4** personalities (`manifest.yaml::schema_version`).
-- When Dagster ships a new minor (1.14.x), the LIBRARIAN curator creates
-  `database/dagster-1.14.x/` alongside 1.13.3 rather than mutating
-  in-place; consumers pin per project.
-
-## Contributing
-
-- **Hit a Dagster gotcha** not covered in the corpus? File a case study
-  to `personalities/dagster-expert/memory/lessons_learned/_inbox/`; the
-  curator promotes it into `database/dagster-1.13.3/docs/`.
-- **PRs against this repo**: keep each `manifest.yaml`'s lineage + notes
-  current, and bump the relevant version field per change.
+Pinned to Dagster **1.13.7**. Bump path: when the internal Dagster
+moves to 1.14.x, the librarian curator creates `database/dagster-1.14.x/`
+alongside 1.13.7 rather than mutating in place; consumers pin per
+project.
 
 ## License
 
-Content is permissively licensed (see [LICENSE](LICENSE)). Each bundled
-example is a minimal Dagster pattern — no proprietary or vendor-internal
-content.
+See [LICENSE](LICENSE). The corpus and framework contain no proprietary
+or vendor-internal content; mock LSF binaries are stand-ins for the
+real `bsub`/`bjobs`/`bkill`.
