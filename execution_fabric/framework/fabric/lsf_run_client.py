@@ -20,7 +20,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from framework.fabric import file_lock, status_db
+from framework.fabric import status_db
 
 
 _BSUB_JOB_ID_RE = re.compile(r"Job\s+<?(\d+)>?\s+is submitted", re.IGNORECASE)
@@ -99,8 +99,7 @@ def dispatch(
 
     Raises subprocess.CalledProcessError if bsub itself fails.
     """
-    with file_lock.with_write_lock(db_path):
-        status_db.upsert_pending(db_path, idempotency_key, asset_name, partition_key)
+    status_db.upsert_pending(db_path, idempotency_key, asset_name, partition_key)
 
     bsub_argv = _build_bsub_argv(
         idempotency_key=idempotency_key,
@@ -117,7 +116,6 @@ def dispatch(
     proc = subprocess.run(bsub_argv, capture_output=True, text=True, check=True)
     job_id = _parse_job_id(proc.stdout + proc.stderr)
 
-    with file_lock.with_write_lock(db_path):
-        status_db.mark_submitted(db_path, idempotency_key, lsf_job_id=job_id)
+    status_db.mark_submitted(db_path, idempotency_key, lsf_job_id=job_id)
 
     return job_id

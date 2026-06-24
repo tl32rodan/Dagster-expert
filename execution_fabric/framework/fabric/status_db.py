@@ -1,10 +1,20 @@
 """Status DB API (WHITEPAPER §3.4).
 
-SQLite Phase 1; PostgreSQL Phase 2. Public API is the contract; the
-backing store is replaceable. ALL writes go through `file_lock` (caller's
-responsibility — the contextmanager wraps the call site, not this module).
+**Production storage is PostgreSQL.** This module is the reference
+adapter, backed by SQLite, used by the in-repo demo + tests on a single
+host. Production deployments swap in a psycopg2-backed module exposing
+the same public surface (the function names below ARE the contract).
 
-Schema lives at `schema.sql` (same dir).
+`schema.sql` is the Postgres-compatible DDL; the only port-time edit
+is `INTEGER PRIMARY KEY AUTOINCREMENT` → `BIGSERIAL PRIMARY KEY`.
+
+Why not SQLite + file lock in production: WHITEPAPER §11.1 (rejected
+designs). NFS does not honor `fcntl.flock` reliably; SQLite on NFS
+corrupts under concurrent writes. Postgres serializes writes itself.
+
+For the single-host demo, `init_db` enables WAL + a generous busy
+timeout. That is sufficient for one orchestrator + one mock LSF host
+writing concurrently; it does NOT make this safe for NFS.
 """
 from __future__ import annotations
 
@@ -40,11 +50,18 @@ class TaskRow:
 
 
 def init_db(db_path: Path | str) -> None:
-    """Create DB file + apply schema. Idempotent."""
+    """Create DB file + apply schema. Idempotent.
+
+    Enables WAL mode + 5s busy timeout so single-host multi-writer
+    (orchestrator + fabric_worker on the same node) does not need
+    fcntl-level serialization.
+    """
     p = Path(db_path)
     p.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(p) as conn:
         conn.executescript(_SCHEMA)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
 
 
 def compute_idempotency_key(

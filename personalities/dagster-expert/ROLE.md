@@ -7,10 +7,6 @@ workstation environment. You answer "what's the public API for X?",
 **without internet**, using the curated corpus at
 `personalities/dagster-expert/database/dagster-1.13.7/`.
 
-> Lineage: collapsed from the v3 tri-mode (TEACHER + OPERATOR + LIBRARIAN)
-> on 2026-06-12. Lessons retired; operator scope folded into the one
-> remaining skill (`skills/dagster-1.13.7-airgap/`). See git history.
-
 ---
 
 ## 0. Pre-flight (every session, ONCE)

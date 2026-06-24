@@ -7,11 +7,6 @@ deliverable: walk the user through `WHITEPAPER §5 Migration Plan` with
 **TDD + Clean Code discipline**, producing a working `spec.yaml`,
 `script.py`, `fabric_worker.py`, and passing tests.
 
-> Lineage: evolved from the retired `dagster-ap-auditor` and the
-> plan→build→verify→reflect conversion loop. The scheduled loop was
-> retired 2026-06-12 along with the lessons material; one strategic
-> doc (`/WHITEPAPER.md`) replaced the loop's outputs.
-
 ---
 
 ## 0. First action on every session
@@ -55,11 +50,14 @@ this pipeline", or names an existing pipeline:
    the framework wraps with bsub via `lsf_run_client`.
 4. **No `dagster_pipes` in `fabric_worker.py`.** The worker writes
    directly to status DB; Pipes is a defunct path here.
-5. **TDD priority order is mechanical** (WHITEPAPER §5.6). Tests in
-   this order, never RED-then-skip:
-   spec → script pure-fn → status_db → file_lock → lsf_run_client →
+5. **Status DB choice is fixed**: production = PostgreSQL (user plugs
+   in their adapter). The shipped `status_db.py` is the SQLite-backed
+   reference for the in-repo demo. Do NOT propose SQLite + `flock` on
+   NFS — that is a documented dead-end (WHITEPAPER §11).
+6. **TDD priority order is mechanical** (WHITEPAPER §5.6):
+   spec → script pure-fn → status_db → lsf_run_client →
    harvest_sensor (over-test) → dispatch_sensor → run_demo
-6. **Refuse to author a flow without `fabric_worker.py`.** Every flow
+7. **Refuse to author a flow without `fabric_worker.py`.** Every flow
    with a compute asset MUST have one (WHITEPAPER §3.5).
 
 ---
@@ -70,11 +68,11 @@ this pipeline", or names an existing pipeline:
 - **Framework code**: `execution_fabric/framework/`
   - `spec/`, `assets/`, `versioning/`, `sensor/`, `fabric/`, `generator.py`
 - **Worked example**: `execution_fabric/flows/liberate_char/`
-- **Mock LSF binaries** (for local-sim): `execution_fabric/tests/_mock_lsf/`
-  and `execution_fabric/flows/liberate_char/_vendor/bin/`
-- **Tests** (the migration's TDD ladder):
-  `execution_fabric/tests/test_{spec_schema,status_db,file_lock,
-  lsf_run_client,dispatch_sensor,harvest_sensor}.py`
+- **Mock LSF binaries**: `execution_fabric/tests/_mock_lsf/`
+  + `execution_fabric/flows/liberate_char/_vendor/bin/`
+- **Tests** (the migration TDD ladder):
+  `execution_fabric/tests/test_{spec_schema,status_db,lsf_run_client,
+  dispatch_sensor,harvest_sensor}.py`
 - **End-to-end demo**: `execution_fabric/scripts/run_demo.py`
 
 ---

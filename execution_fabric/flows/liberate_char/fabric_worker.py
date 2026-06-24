@@ -31,7 +31,7 @@ from pathlib import Path
 _ROOT = Path(__file__).resolve().parents[3]   # …/execution_fabric
 sys.path.insert(0, str(_ROOT))
 
-from framework.fabric import file_lock, status_db  # noqa: E402
+from framework.fabric import status_db  # noqa: E402
 
 
 def _compute_data_version_from_ldb(out_dir: Path, pvt: str, cell: str) -> str:
@@ -86,14 +86,12 @@ def main() -> int:
 
         pvt, cell, out_dir = _extract_pvt_cell(inner_argv)
         data_version = _compute_data_version_from_ldb(out_dir, pvt, cell)
-        with file_lock.with_write_lock(args.db_path):
-            status_db.mark_success(args.db_path, args.idempotency_key, data_version)
+        status_db.mark_success(args.db_path, args.idempotency_key, data_version)
         return 0
 
     except Exception as e:
         try:
-            with file_lock.with_write_lock(args.db_path):
-                status_db.mark_failed(args.db_path, args.idempotency_key, str(e))
+            status_db.mark_failed(args.db_path, args.idempotency_key, str(e))
         except Exception as inner_e:
             sys.stderr.write(f"[fabric_worker] mark_failed itself failed: {inner_e}\n")
         sys.stderr.write(f"[fabric_worker] failed: {e}\n")

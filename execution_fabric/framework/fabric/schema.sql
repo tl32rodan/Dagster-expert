@@ -1,7 +1,14 @@
--- Status DB schema (WHITEPAPER §3.4, §10.1).
--- Phase 1: SQLite. Phase 2: identical DDL ports to PostgreSQL.
--- Phase-2 columns (worker_id, lease_expires) are present but NULL in Phase 1
--- so the upgrade is data-only, not schema-altering.
+-- Status DB schema (WHITEPAPER §3.4).
+--
+-- Production = PostgreSQL. This file ships as Postgres-compatible DDL.
+-- For the SQLite reference adapter, AUTOINCREMENT is honored as-is;
+-- when porting to Postgres, change `INTEGER PRIMARY KEY AUTOINCREMENT`
+-- to `BIGSERIAL PRIMARY KEY`. The remaining columns + indexes are
+-- portable verbatim.
+--
+-- Columns reserved for production fault-recovery (worker_id, lease_expires)
+-- are NULL in the single-host reference; their use is documented in
+-- WHITEPAPER §6.
 
 CREATE TABLE IF NOT EXISTS tasks (
     id              INTEGER PRIMARY KEY AUTOINCREMENT,
