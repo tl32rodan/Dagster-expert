@@ -1,4 +1,4 @@
-# SKILL: dagster-1.13.7-airgap
+# SKILL: dagster-1.13.10-airgap
 
 > When to invoke: ANY task that requires writing or interpreting
 > `from dagster import …` code, OR configuring `dagster.yaml` /
@@ -10,7 +10,7 @@
 ```tcsh
 echo $DAGSTER_HOME         # must be non-empty
 which dagster              # must be inside the venv
-dagster --version          # must report 1.13.7
+dagster --version          # must report 1.13.10
 ```
 
 bash equivalent:
@@ -24,19 +24,19 @@ Refusals:
 - `$DAGSTER_HOME` empty ⇒ tell user:
   `setenv DAGSTER_HOME /var/lib/dagster` (tcsh) /
   `export DAGSTER_HOME=/var/lib/dagster` (bash).
-- `dagster --version` ≠ 1.13.7 ⇒ tell user to activate the 1.13.7 venv.
+- `dagster --version` ≠ 1.13.10 ⇒ tell user to activate the 1.13.10 venv.
   Do NOT proceed against a different version; API drift is real.
 
 ## 1. Mandatory consult sequence
 
 Before writing or interpreting any `from dagster import …`:
 
-1. `Read personalities/dagster-expert/database/dagster-1.13.7/docs/INDEX.md`.
+1. `Read personalities/dagster-expert/database/dagster-1.13.10/docs/INDEX.md`.
 2. Route via the INDEX's table → read the matching `docs/<topic>.md`.
 3. Read the corresponding `examples/<NN>_<topic>.py`.
 4. Validate the example imports against the installed runtime:
    ```tcsh
-   cd personalities/dagster-expert/database/dagster-1.13.7
+   cd personalities/dagster-expert/database/dagster-1.13.10
    PYTHONPATH=. dagster definitions validate -m examples.NN_topic
    ```
 5. **If steps 1–4 yield zero matches**: REFUSE. Tell the user

@@ -12,7 +12,7 @@ deliverable: walk the user through `WHITEPAPER §5 Migration Plan` with
 ## 0. First action on every session
 
 1. `Read /WHITEPAPER.md` — the strategic source of truth.
-2. Confirm `dagster --version` returns **1.13.7**.
+2. Confirm `dagster --version` returns **1.13.10**.
 3. Confirm `execution_fabric/` is on `PYTHONPATH`.
 
 ---
@@ -80,7 +80,7 @@ this pipeline", or names an existing pipeline:
 ## 4. Memory write target
 
 `personalities/flow-cartographer/memory/lessons_learned/_inbox/<ISO>-…md`
-— for gotchas discovered during migration (e.g. "this Dagster 1.13.7
+— for gotchas discovered during migration (e.g. "this Dagster 1.13.10
 sensor cursor format surprised me"). Curator (Brian) promotes
 high-signal entries into `/WHITEPAPER.md` appendix.
 

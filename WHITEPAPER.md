@@ -2,7 +2,7 @@
 
 > **文件目的**：說明 EDA characterization 編排系統的「為什麼」與「怎麼做」。讀者:接手實作、修改、或將既有 script 移植進本框架的工程師 / AI agent。
 >
-> **環境前提**:air-gapped 工作站、LSF job scheduler、NFS 共享儲存、可用 Kafka(無 RabbitMQ)、PostgreSQL 可部署於專用主機、tcsh/csh shell。Dagster 版本鎖定在 **1.13.7**。
+> **環境前提**:air-gapped 工作站、LSF job scheduler、NFS 共享儲存、可用 Kafka(無 RabbitMQ)、PostgreSQL 可部署於專用主機、tcsh/csh shell。Dagster 版本鎖定在 **1.13.10**。
 
 ---
 
@@ -232,7 +232,7 @@ def harvest_sensor(context):
 **正確性鐵則**:
 1. **先回填 Dagster 再推進 cursor**;失敗則 cursor 停留 → 下次重試。
 2. `report_runless_asset_event` **天生冪等**(latest-wins,重複 append 無害)。
-3. `job=` 參數是 1.13.7 `@sensor` 的 schema 要求;我們從不真的 enqueue 該 job(`SkipReason` 並 emit side effect)。
+3. `job=` 參數是 1.13.10 `@sensor` 的 schema 要求;我們從不真的 enqueue 該 job(`SkipReason` 並 emit side effect)。
 
 詳細測試要求見 §7.3。
 
@@ -676,7 +676,7 @@ In-repo reference(repo 裡跑 `scripts/run_demo.py` 看到的版本)以最小元
    - `grep -rn "file_lock\|fcntl.flock" execution_fabric/` 0 命中(SQLite + flock + NFS 死絕,§10.1)
    - `grep -E "^(from|import) dagster" execution_fabric/flows/*/script.py` 0 命中
 4. **中斷重跑**:§6.1 / §6.3 / §6.4 場景手動跑過、行為符合描述。
-5. **Dagster 版本**:`dagster --version` 顯示 1.13.7。
+5. **Dagster 版本**:`dagster --version` 顯示 1.13.10。
 
 ---
 
@@ -693,7 +693,7 @@ In-repo reference(repo 裡跑 `scripts/run_demo.py` 看到的版本)以最小元
 ### 11.2 Push-based custom `LSFRunLauncher`(1 run = 1 bsub)
 
 - **曾經誤以為**:寫一個 `LSFRunLauncher` 把每個 Dagster run 透過 bsub 丟到 LSF 節點執行——這樣 Dagster UI 仍掌握每個 run 的成敗(綠燈 = 計算成功),且不用自寫 status DB。實作上能跑通,測試也綠。
-- **實際發生**:run worker 的生命週期 = 計算時長(數十分鐘 ~ 小時級)。10k 份計算 = 10k 個 run worker process 同時存在。Dagster daemon 是「逐個 push `launch_run`」的序列模型,實測在 `max_concurrent_runs=512` 設定下實際只啟得起 60–80 個——daemon 的 launch throughput 成瓶頸,LSF queue 反而沒餵飽。另外:Dagster 1.13.7 的 `instance.create_run_for_job` + `RunLauncher` ABC 對「同時數千個獨立 run」沒有最佳化(coordinator dequeue + launcher fork + gRPC code server 通訊都是序列點)。
+- **實際發生**:run worker 的生命週期 = 計算時長(數十分鐘 ~ 小時級)。10k 份計算 = 10k 個 run worker process 同時存在。Dagster daemon 是「逐個 push `launch_run`」的序列模型,實測在 `max_concurrent_runs=512` 設定下實際只啟得起 60–80 個——daemon 的 launch throughput 成瓶頸,LSF queue 反而沒餵飽。另外:Dagster 1.13.10 的 `instance.create_run_for_job` + `RunLauncher` ABC 對「同時數千個獨立 run」沒有最佳化(coordinator dequeue + launcher fork + gRPC code server 通訊都是序列點)。
 - **該做什麼**:**Dagster run 不要與「一個計算」一對一**。本架構讓 Dagster run 只負責「dispatch + harvest」這兩件超短任務,實際計算由 fabric_worker 在 LSF 節點上獨立執行,**完全不在 Dagster run 的生命週期內**。`max_concurrent_runs` 設個位數即可。**LSFRunLauncher 整顆刪除**——`grep -rn "LSFRunLauncher" execution_fabric/` 必須 0 命中(§9 acceptance)。
 
 ### 11.3 In-asset Pipes `bsub`(asset body 內呼叫 PipesSubprocessClient + bsub)
@@ -705,7 +705,7 @@ In-repo reference(repo 裡跑 `scripts/run_demo.py` 看到的版本)以最小元
 ### 11.4 把 Dagster materializations 當「observed」
 
 - **曾經誤以為**:dispatch sensor 的 `observed` 集合用 `context.instance.get_materialized_partitions(asset_key)` 取——這是 Dagster 的原生 API,語義清楚,不用自寫查詢。
-- **實際發生**:dispatch asset body `return None` 之後,Dagster 1.13.7 會**自動 emit 一個 placeholder `AssetMaterialization`**(帶自動算的 data_version,從 upstream input data_versions 推導)。dispatch sensor 看到 placeholder 就以為「已算完」,**不再 redispatch**——但實際的 fabric_worker 可能根本還沒開始跑,甚至完全沒投出去(bsub 失敗時)。Lineage 上像是綠的,實際上 `.ldb` 檔案不存在。
+- **實際發生**:dispatch asset body `return None` 之後,Dagster 1.13.10 會**自動 emit 一個 placeholder `AssetMaterialization`**(帶自動算的 data_version,從 upstream input data_versions 推導)。dispatch sensor 看到 placeholder 就以為「已算完」,**不再 redispatch**——但實際的 fabric_worker 可能根本還沒開始跑,甚至完全沒投出去(bsub 失敗時)。Lineage 上像是綠的,實際上 `.ldb` 檔案不存在。
 - **該做什麼**:dispatch sensor 的 `observed` **只從 status DB 讀 SUCCESS 的 partition keys**(`status_db.list_successful_partitions`)。Dagster 的 materializations 由 harvest sensor 寫入,是「身分真相」,不是「執行真相」。**不要混用**——這是整個架構的核心分層體現。同理,Dagster UI 上看到 dispatch run 變綠是「投遞成功」,不是「計算完成」(§2.3 因此棄用原生 UI)。
 
 ### 11.5 多寫者的 status table(control logic 直接寫 status DB)
@@ -771,7 +771,7 @@ In-repo reference(repo 裡跑 `scripts/run_demo.py` 看到的版本)以最小元
 | **Fabric worker** | 在 LSF 節點上的 subprocess,跑 inner script + 自算 data_version + 寫 SUCCESS |
 | **Observed**(dispatch sensor) | Status DB 中該 asset 的 SUCCESS partition keys(**不**是 Dagster materializations) |
 | **Desired**(dispatch sensor) | `partitions_def.get_partition_keys()` |
-| **Runless asset event** | Dagster 1.13.7 的 `DagsterInstance.report_runless_asset_event(AssetMaterialization(...))`;讓 sensor 不透過 run 直接更新 lineage |
+| **Runless asset event** | Dagster 1.13.10 的 `DagsterInstance.report_runless_asset_event(AssetMaterialization(...))`;讓 sensor 不透過 run 直接更新 lineage |
 
 ### 10.3 不變量總表
 
@@ -781,9 +781,9 @@ In-repo reference(repo 裡跑 `scripts/run_demo.py` 看到的版本)以最小元
 4. dispatch sensor 的 `observed` 來自 status DB(不來自 Dagster materializations)。
 5. Fabric worker 失敗時,raise 之前必先 `mark_failed`。
 
-### 10.4 1.13.7 sensor API 探測
+### 10.4 1.13.10 sensor API 探測
 
-`DagsterInstance.report_runless_asset_event(AssetMaterialization(asset_key, partition, tags))` 在 1.13.7 仍存在、語義不變(latest-wins、append-only)。`@sensor` body 可呼叫此方法並 `return SkipReason`,side effect 仍生效——這是 harvest sensor 的核心契約。
+`DagsterInstance.report_runless_asset_event(AssetMaterialization(asset_key, partition, tags))` 在 1.13.10 仍存在、語義不變(latest-wins、append-only)。`@sensor` body 可呼叫此方法並 `return SkipReason`,side effect 仍生效——這是 harvest sensor 的核心契約。
 
 實作前必跑:
 ```tcsh
@@ -791,6 +791,6 @@ python -c "
 from dagster import DagsterInstance, AssetMaterialization, AssetKey
 inst = DagsterInstance.ephemeral()
 inst.report_runless_asset_event(AssetMaterialization(asset_key=AssetKey('test'), tags={'dagster/data_version':'v1'}))
-print('OK, runless event works in 1.13.7')
+print('OK, runless event works in 1.13.10')
 "
 ```

@@ -1,13 +1,13 @@
 # Dagster-expert — agent map
 
-Air-gapped Dagster 1.13.7 framework + librarian. Two personalities,
+Air-gapped Dagster 1.13.10 framework + librarian. Two personalities,
 one strategic doc, one worked example.
 
 ## Pick your personality
 
 | If the user is doing… | Switch to | Trigger words |
 |---|---|---|
-| Looking up a Dagster 1.13.7 API / asking how a Dagster concept works | `dagster-expert` | "what's the API for", "is X still valid in 1.13.7", "look up", "signature of" |
+| Looking up a Dagster 1.13.10 API / asking how a Dagster concept works | `dagster-expert` | "what's the API for", "is X still valid in 1.13.10", "look up", "signature of" |
 | Porting an existing pipeline onto the Execution Fabric | `flow-cartographer` | "convert this", "port this script", "migrate this flow", "wrap my pipeline" |
 | Reading the architecture or designing a change | either, both read `/WHITEPAPER.md` | "how does the framework work", "why is X this way", "design", "architecture" |
 
@@ -30,15 +30,15 @@ in `WHITEPAPER.md §11 Rejected designs / alternatives considered`.
 /WHITEPAPER.md                                              # strategic doc
 execution_fabric/framework/{spec,assets,versioning,sensor,fabric}/  # framework code
 execution_fabric/flows/liberate_char/                       # the worked example
-personalities/dagster-expert/database/dagster-1.13.7/       # API corpus
-personalities/dagster-expert/skills/dagster-1.13.7-airgap/  # the one skill
+personalities/dagster-expert/database/dagster-1.13.10/       # API corpus
+personalities/dagster-expert/skills/dagster-1.13.10-airgap/  # the one skill
 personalities/{dagster-expert,flow-cartographer}/ROLE.md    # per-personality instructions
 ```
 
 ## Hard rules (both personalities)
 
 1. **No Dagster API from training memory.** Cite a file under
-   `database/dagster-1.13.7/` or refuse.
+   `database/dagster-1.13.10/` or refuse.
 2. **No private imports** (`dagster._core.*` / `_internal.*` / `_private.*`).
 3. **No `bsub` in `script.py`.** The framework wraps with bsub via
    `lsf_run_client`. Application code returns inner argv only.

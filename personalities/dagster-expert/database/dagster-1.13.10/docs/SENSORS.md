@@ -1,4 +1,4 @@
-# SENSORS.md — Dagster 1.13.7 @sensor + cursor + runless events
+# SENSORS.md — Dagster 1.13.10 @sensor + cursor + runless events
 
 ## 1. Anatomy of a sensor
 
@@ -65,7 +65,7 @@ context.instance.report_runless_asset_event(
 )
 ```
 
-Semantics in 1.13.7:
+Semantics in 1.13.10:
 - The event is **appended** to the global event log (not upserted).
 - `get_materialized_partitions(asset_key)` will include the partition.
 - `get_latest_data_version_record(asset_key, partition=...)` reads the
@@ -96,7 +96,7 @@ Semantics in 1.13.7:
 Sensors are the workhorse for the Execution Fabric (dispatch + harvest);
 schedules are not used.
 
-## 6. Gotchas seen in 1.13.7
+## 6. Gotchas seen in 1.13.10
 
 1. **`@dg.sensor` without `job=` is rejected.** Provide a no-op job
    even for side-effect-only sensors.

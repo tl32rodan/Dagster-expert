@@ -1,4 +1,4 @@
-# ARCHITECTURE.md — Dagster 1.13.7 component model
+# ARCHITECTURE.md — Dagster 1.13.10 component model
 
 Read this when the question is about **what process does what**, **where
 state lives**, or **how processes connect** in a self-hosted Dagster
@@ -22,7 +22,7 @@ When the daemon launches a run, it spawns a **run worker** process.
 The run worker's lifetime equals the run's lifetime. For
 `DefaultRunLauncher`, this is a subprocess of the daemon's host. For
 custom RunLaunchers (k8s, EC2, LSF), this is a remote process — but
-1.13.7's design assumes the run worker reaches the same storage
+1.13.10's design assumes the run worker reaches the same storage
 backend (Postgres, S3 io_manager, etc.) the orchestrator uses.
 
 > **WHY the Execution Fabric inverts this** (`/WHITEPAPER.md` §1.3):
@@ -121,7 +121,8 @@ Postgres ───── run/event/schedule store (shared by all of the above)
 
 ## 8. References
 
-- 1.13.7 source: `github.com/dagster-io/dagster` at tag `1.13.7`
-- This page's claims are validated by running 52 tests + an end-to-end
-  demo against installed 1.13.7 (`execution_fabric/tests/` +
-  `scripts/run_demo.py`).
+- 1.13.10 source: `github.com/dagster-io/dagster` at tag `1.13.10`
+- This page's claims are validated by running the framework's 49 tests +
+  an end-to-end demo against installed **1.13.7** (`execution_fabric/tests/`
+  + `scripts/run_demo.py`). Per `1_13_10_RELEASE_NOTES.md` no API used here
+  changed through 1.13.10; re-run on the 1.13.10 build to reconfirm.

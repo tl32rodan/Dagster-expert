@@ -1,7 +1,7 @@
-# Dagster 1.13.7 corpus — INDEX
+# Dagster 1.13.10 corpus — INDEX
 
 Curated subset of the official Dagster docs (`docs.dagster.io` /
-`github.com/dagster-io/dagster` @ `1.13.7`), filtered for air-gap usage.
+`github.com/dagster-io/dagster` @ `1.13.10`), filtered for air-gap usage.
 
 ## What's in here vs. what's NOT
 
@@ -29,7 +29,7 @@ Curated subset of the official Dagster docs (`docs.dagster.io` /
 | "How does `report_runless_asset_event` work?" | [SENSORS.md](SENSORS.md) §3 |
 | "What are the run states / RunLauncher contract?" | [RUN_LIFECYCLE.md](RUN_LIFECYCLE.md) |
 | "Why not Components / dg / uv / k8s / SQLite-on-NFS?" | [AIRGAP_DELTAS.md](AIRGAP_DELTAS.md) |
-| "What changed from 1.13.3 to 1.13.7?" | [1_13_7_RELEASE_NOTES.md](1_13_7_RELEASE_NOTES.md) |
+| "What changed through 1.13.10 that matters here?" | [1_13_10_RELEASE_NOTES.md](1_13_10_RELEASE_NOTES.md) |
 
 ## Examples
 
@@ -41,8 +41,11 @@ Curated subset of the official Dagster docs (`docs.dagster.io` /
 | `examples/04_partition_mapping.py` | `MultiToSingleDimensionPartitionMapping` (used by the Execution Fabric) |
 | `examples/05_run_lifecycle.py` | Minimal demo of run states + DefaultRunLauncher |
 
-Each example is validated by `dagster definitions validate -m examples.<NN>_<topic>`
-against an installed 1.13.7.
+Each example is validated by `dagster definitions validate -m examples.<NN>_<topic>`.
+Last green run: **installed 1.13.7** (this workstation's pinned build). Per
+`1_13_10_RELEASE_NOTES.md`, none of the APIs these examples use changed through
+1.13.10, so they carry forward — re-run `validate` once the 1.13.10 build is
+deployed to reconfirm.
 
 ## Mandatory consult sequence (the skill enforces this)
 

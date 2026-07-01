@@ -1,7 +1,7 @@
 # Dagster-expert
 
 An execution framework for large-scale EDA characterization on an
-air-gapped TSMC workstation, layered on **Dagster 1.13.7** + **LSF**.
+air-gapped TSMC workstation, layered on **Dagster 1.13.10** + **LSF**.
 
 ## What lives here
 
@@ -9,7 +9,7 @@ air-gapped TSMC workstation, layered on **Dagster 1.13.7** + **LSF**.
 |---|---|---|
 | Architecture white paper (strategy + design rationale) | [`WHITEPAPER.md`](WHITEPAPER.md) | engineers + agents |
 | Framework code + worked example (`liberate_char`) | [`execution_fabric/`](execution_fabric/) | engineers |
-| Dagster 1.13.7 air-gap corpus + the one librarian skill | [`personalities/dagster-expert/`](personalities/dagster-expert/) | agents |
+| Dagster 1.13.10 air-gap corpus + the one librarian skill | [`personalities/dagster-expert/`](personalities/dagster-expert/) | agents |
 | Migration coach personality (porting your existing pipeline) | [`personalities/flow-cartographer/`](personalities/flow-cartographer/) | engineers + agents |
 
 ## The architectural idea, in one paragraph
@@ -46,8 +46,8 @@ rows in the status DB, 9/9 `AssetMaterialization` events in Dagster,
 - **Porting an existing pipeline** → start at
   [`WHITEPAPER.md §5 Migration Plan`](WHITEPAPER.md#5-migration-plan)
   and switch the agent to `flow-cartographer`.
-- **Looking up a Dagster 1.13.7 API** → switch the agent to
-  `dagster-expert`; it reads `personalities/dagster-expert/database/dagster-1.13.7/`
+- **Looking up a Dagster 1.13.10 API** → switch the agent to
+  `dagster-expert`; it reads `personalities/dagster-expert/database/dagster-1.13.10/`
   and refuses to answer from training memory.
 - **Reading the design** → [`WHITEPAPER.md`](WHITEPAPER.md). The
   rejected-designs section at the bottom is the most useful entry
@@ -58,4 +58,4 @@ rows in the status DB, 9/9 `AssetMaterialization` events in Dagster,
 No internet at runtime. No `dg`/`uv`/Components/Dagster+/Cloud/k8s.
 Wheelhouse pattern for pip. tcsh-first shell syntax (bash in parens).
 Full deltas in
-[`personalities/dagster-expert/database/dagster-1.13.7/docs/AIRGAP_DELTAS.md`](personalities/dagster-expert/database/dagster-1.13.7/docs/AIRGAP_DELTAS.md).
+[`personalities/dagster-expert/database/dagster-1.13.10/docs/AIRGAP_DELTAS.md`](personalities/dagster-expert/database/dagster-1.13.10/docs/AIRGAP_DELTAS.md).

@@ -1,4 +1,4 @@
-# ASSETS_PARTITIONS.md — Dagster 1.13.7 asset graph + partition shapes
+# ASSETS_PARTITIONS.md — Dagster 1.13.10 asset graph + partition shapes
 
 ## 1. Asset declaration
 
@@ -15,7 +15,7 @@ def my_asset() -> dg.MaterializeResult:
 
 - **`AssetKey`** — the asset's identity; default `AssetKey(["my_asset"])`.
 - **`MaterializeResult`** — what the body returns; carries `data_version`,
-  `metadata`, `tags`. In 1.13.7 returning `None` is also accepted; Dagster
+  `metadata`, `tags`. In 1.13.10 returning `None` is also accepted; Dagster
   auto-emits a placeholder materialization with an auto-computed
   `data_version` derived from input data_versions. The Execution Fabric
   exploits this: dispatch asset bodies return None; harvest sensor emits
@@ -98,7 +98,7 @@ the Execution Fabric. Example: characterize is multi-partitioned by
 def characterize(): ...
 ```
 
-**Beta warning**: 1.13.7 still emits `BetaWarning` for this class but
+**Beta warning**: 1.13.10 still emits `BetaWarning` for this class but
 it's stable enough for production. The framework code uses it.
 
 ## 5. DataVersion + staleness
@@ -139,7 +139,7 @@ defs = dg.Definitions(
 `Definitions` is one per code location. `workspace.yaml` lists code
 locations.
 
-## 7. Gotchas seen in 1.13.7
+## 7. Gotchas seen in 1.13.10
 
 1. **`define_asset_job` rejects mixed partition shapes in one selection.**
    Build one job per asset (or per shape).

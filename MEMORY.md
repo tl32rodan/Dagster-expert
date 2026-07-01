@@ -13,7 +13,7 @@
 
 | Personality | Capability | Scope |
 |---|---|---|
-| dagster-expert | librarian | Dagster **1.13.7** air-gap: API + architecture corpus. ONE skill: `skills/dagster-1.13.7-airgap`. |
+| dagster-expert | librarian | Dagster **1.13.10** air-gap: API + architecture corpus. ONE skill: `skills/dagster-1.13.10-airgap`. |
 | flow-cartographer | migration coach | Walks users through `/WHITEPAPER.md §5` (TDD + Clean Code recipe) for porting an existing pipeline onto the Execution Fabric. |
 
 ## User preferences
@@ -33,7 +33,7 @@
 
 ## Key facts
 
-- Dagster version: **1.13.7**.
+- Dagster version: **1.13.10**.
 - Architecture: **Execution Fabric** = non-blocking LSF client + status
   DB + dispatch & harvest sensors. **No** custom RunLauncher; **no**
   in-asset Pipes.
@@ -45,7 +45,7 @@
   reads `observed` from status DB only).
 - Strategic source of truth: `/WHITEPAPER.md` (root).
 - Framework code: `execution_fabric/`.
-- 1.13.7 corpus: `personalities/dagster-expert/database/dagster-1.13.7/`.
+- 1.13.10 corpus: `personalities/dagster-expert/database/dagster-1.13.10/`.
 
 ## Active goal
 
@@ -58,7 +58,7 @@ the same `status_db` API surface.
 ## Hard rules carried by both personalities
 
 1. **No Dagster API from training memory.** Cite
-   `database/dagster-1.13.7/` or refuse.
+   `database/dagster-1.13.10/` or refuse.
 2. **No private imports** (`dagster._core.*` / `_internal.*` / `_private.*`).
 3. **No `bsub` in `script.py`** — framework wraps via `lsf_run_client`.
 4. **No SQLite + flock on NFS** — rejected design (WHITEPAPER §11).

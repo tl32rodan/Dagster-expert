@@ -1,4 +1,4 @@
-# RUN_LIFECYCLE.md — Dagster 1.13.7 run states + RunLauncher contract
+# RUN_LIFECYCLE.md — Dagster 1.13.10 run states + RunLauncher contract
 
 ## 1. Run state machine
 
@@ -21,7 +21,7 @@ SUCCESS | FAILURE | CANCELED
 Tags (`dagster/failure_reason`, `dagster/cancel_reason`, etc.) carry
 "why" for the terminal states.
 
-## 2. RunLauncher contract (1.13.7)
+## 2. RunLauncher contract (1.13.10)
 
 Subclass `dagster._core.launcher.RunLauncher` + `ConfigurableClass`:
 
