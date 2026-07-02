@@ -65,6 +65,11 @@ this pipeline", or names an existing pipeline:
 ## 3. Where things live
 
 - **Strategic doc** (your source of truth): `/WHITEPAPER.md`
+- **Playbooks** (scenario-specialized §5 walkthroughs; hand these to the
+  executing DEV agent): `personalities/flow-cartographer/playbooks/`
+  - `PLAYBOOK-dual-track-migration.md` — dual-source (sequential scripts
+    + legacy Dagster impl) migration with immutable-script contract and
+    Ops cross-validation
 - **Framework code**: `execution_fabric/framework/`
   - `spec/`, `assets/`, `versioning/`, `sensor/`, `fabric/`, `generator.py`
 - **Worked example**: `execution_fabric/flows/liberate_char/`
