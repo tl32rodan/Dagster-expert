@@ -542,7 +542,7 @@ def main():
 - 手寫 scheduling / cron / dependency walker → Dagster 取代
 - 「這個工作有沒有做過」自查邏輯 → status DB 取代
 - 用檔案存「進行中」狀態 → status DB 取代
-- 重試 / retry queue → Phase 2 reaper 取代;Phase 1 接受手動重啟
+- 重試 / retry queue → dispatch sensor 的 desired−observed 重投語義取代(§10.9);孤兒回收交給 production reaper(§8);in-repo reference 接受手動重啟
 
 ---
 
@@ -552,7 +552,7 @@ def main():
 
 - **發生什麼**:daemon 死,dispatch sensor 與 harvest sensor 停止 tick。**已經 bsub 出去的 fabric_worker 不受影響**——它們在 LSF 節點上獨立執行,完成後仍會寫 status DB。
 - **重啟後**:dispatch sensor 從 status DB 讀 `observed`(任何 SUCCESS 都算),不重投。harvest sensor 從 cursor 繼續。
-- **Phase 1 限制**:中斷瞬間正卡在 SUBMITTED 但 worker 死掉(例如 LSF 殺 job)的 row 會永遠卡住。需要手動 SQL `UPDATE tasks SET state='PENDING', lsf_job_id=NULL WHERE …`,或刪 row 讓 dispatch sensor 重投。
+- **Reference(無 reaper)限制**:中斷瞬間正卡在 SUBMITTED 但 worker 死掉(例如 LSF 殺 job)的 row 會永遠卡住。需要手動 SQL `UPDATE tasks SET state='PENDING', lsf_job_id=NULL WHERE …`,或刪 row 讓 dispatch sensor 重投。Production 由 bjobs-driven reaper 自動處理(§8)。
 
 ### 6.2 User 取消特定 partition
 
@@ -564,7 +564,7 @@ sqlite3 $STATUS_DB "UPDATE tasks SET state='FAILED', \
   error_message='user cancelled' WHERE …"
 ```
 
-Phase 2:control plane 寫 CANCELLED 狀態;dispatch sensor 把 CANCELLED 視為「已 observed」不重投;UI 提供按鈕。
+Production:control plane 寫 CANCELLED 請求(經 control queue,非直寫 status table——§10.5);dispatch sensor 把 CANCELLED 視為「已 observed」不重投;UI 提供按鈕。
 
 ### 6.3 User 重跑 partition(input 沒變)
 
@@ -579,7 +579,7 @@ Phase 2:control plane 寫 CANCELLED 狀態;dispatch sensor 把 CANCELLED 視為�
 - 觸發指紋變 → 新 idempotency_key。
 - dispatch sensor 看 `observed`(舊 SUCCESS 的 idem_key)≠ 新 idem_key → 「missing」 → 重新 dispatch。
 - 舊 SUCCESS row 留在 DB(歷史)。harvest sensor 報新的 materialization;Dagster 的 latest-wins 用最新的 data_version 推進 lineage。
-- Phase 2:TTL / archival 清舊 row。
+- Production:TTL / archival 清舊 row。
 
 ### 6.5 In-repo reference 明確不處理的情況
 
@@ -608,7 +608,7 @@ idempotency_key = sha256(
 ```
 
 - **故障一(投遞去重)**:UNIQUE constraint;同 key 第二次 INSERT 自動 no-op。
-- **故障二(孤兒回收,Phase 2)**:同 key 不變,reaper 移除舊 row 重投,Dagster 視為同一邏輯 task。
+- **故障二(孤兒回收,production reaper)**:同 key 不變,reaper 移除舊 row 重投,Dagster 視為同一邏輯 task。
 - **故障三(收割冪等)**:harvest sensor 即使重複 report,Dagster 的 event log latest-wins 確保身分一致。
 
 「觸發指紋包含 upstream data_versions」是**關鍵設計**:
@@ -686,7 +686,7 @@ In-repo reference(repo 裡跑 `scripts/run_demo.py` 看到的版本)以最小元
 
 ### 11.1 SQLite + `fcntl.flock` on NFS
 
-- **曾經誤以為**:status DB 用 SQLite 加 file lock 就夠了——LSF 節點與 orchestrator 都掛同一個 NFS,共享一個 `.db` 檔加一個 sibling `.lock` 檔即可。Phase 1 就這樣設計。
+- **曾經誤以為**:status DB 用 SQLite 加 file lock 就夠了——LSF 節點與 orchestrator 都掛同一個 NFS,共享一個 `.db` 檔加一個 sibling `.lock` 檔即可。初版就這樣設計。
 - **實際發生**:NFS 對 `fcntl.flock` 的支援**不可靠**。NFSv3 沒有 byte-range lock 的伺服器端強制;NFSv4 有,但實作各廠各異,且 lock 可能在 client / server timeout 後悄悄被釋放。**多 process 並發寫入時 SQLite 會 corrupt**(WAL frame 半寫、`-shm` / `-wal` sidecar 不同步)。真實案例:user 在 production-like env 跑驗證,multi-host 寫入後 DB 文件損毀,backup 沒救。
 - **該做什麼**:**production = PostgreSQL**。Repo 內 `status_db.py` 的 SQLite 路徑**只給 in-repo demo + tests 用**(單機、單寫者或多寫者透過 WAL + `busy_timeout` 處理);production 換 psycopg2 適配器。Postgres 自己處理 transactional concurrency,沒有 flock 議題。NFS 上的 SQLite **任何情況下都不用**——即使「只有一個寫者也跨 NFS」這種看似安全的設定,backup / restore / failover 場景仍會踩到。**不要再提「但如果 NFSv4 + 特定 mount option 是不是就 OK」——當你需要去調 mount option 才能用,你已經用錯工具了**。
 

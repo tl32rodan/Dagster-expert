@@ -84,9 +84,9 @@ def upsert_pending(
 ) -> bool:
     """INSERT a PENDING row. Returns True if inserted, False if absorbed by UNIQUE.
 
-    Phase 1 contract: UNIQUE constraint enforces §6.1 "no double dispatch
-    for unchanged idempotency_key". Phase 2 adds active-state-aware
-    conflict resolution.
+    The UNIQUE constraint enforces §7.1 "no double dispatch for unchanged
+    idempotency_key". Production Postgres adapters may add active-state-aware
+    conflict resolution (INSERT … ON CONFLICT DO NOTHING).
     """
     with sqlite3.connect(db_path) as conn:
         try:
@@ -110,7 +110,8 @@ def mark_submitted(db_path: Path | str, idempotency_key: str, lsf_job_id: str | 
 
 
 def mark_running(db_path: Path | str, idempotency_key: str) -> None:
-    """Phase 2: bjobs synchronizer calls this on PEND → RUN. Phase 1 unused."""
+    """Production: the bjobs synchronizer calls this on PEND → RUN.
+    Unused by the in-repo reference/demo (SUBMITTED conflates RUNNING)."""
     with sqlite3.connect(db_path) as conn:
         conn.execute(
             "UPDATE tasks SET state=?, running_at=? WHERE idempotency_key=?",

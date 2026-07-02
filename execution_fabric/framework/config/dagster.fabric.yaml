@@ -31,7 +31,7 @@ run_monitoring:
 telemetry:
   enabled: false
 
-# storage:  # Phase 2: PostgreSQL
+# storage:  # production: PostgreSQL (WHITEPAPER §8; corpus AIRGAP_DELTAS §3)
 #   postgres:
 #     postgres_db:
 #       hostname: pg.internal

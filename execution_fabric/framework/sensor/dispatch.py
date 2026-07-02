@@ -38,8 +38,8 @@ def build_dispatch_sensor(
     """
     flow_name = spec.flow_name
 
-    # Pre-compute the desired partition set per asset (immutable across ticks
-    # in Phase 1 — static dimensions only).
+    # Pre-compute the desired partition set per asset (static dimensions
+    # only, so the desired set is immutable across ticks).
     desired_by_asset: dict[str, list[str]] = {}
     for a in compute_asset_specs:
         pd = build_partitions_def(a.partitioned_by, spec.dimensions)

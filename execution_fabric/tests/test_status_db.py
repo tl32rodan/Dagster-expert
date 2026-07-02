@@ -1,7 +1,7 @@
 """Status DB API + state machine (WHITEPAPER §3.4, §7.1).
 
 UNIQUE constraint enforces "no double dispatch for unchanged idempotency_key"
-at the DB level — this is §6.1's first line of defense.
+at the DB level — the first line of defense for §7.1's dispatch-dedup contract.
 """
 import pytest
 

@@ -1,16 +1,16 @@
 """Non-blocking LSF client (WHITEPAPER §3.4 lsf_run_client).
 
 dispatch() does TWO things and returns. NO `-K`, NO wait.
-  1. INSERT a PENDING row in status DB (UNIQUE absorbs dupes per §6.1).
+  1. INSERT a PENDING row in status DB (UNIQUE absorbs dupes per §7.1).
   2. bsub the fabric_worker wrapper; parse job_id from bsub output;
      mark SUBMITTED.
 
 The fabric_worker on the LSF node is what actually runs the computation,
 self-computes the data_version, and writes SUCCESS back to status DB.
 
-Phase 2 adds: priority queue between sensor and dispatch (Kafka);
-synchronizer thread for bjobs SUBMITTED→RUNNING transitions; reaper for
-orphan recovery. None of that is in this module.
+Production adds around this module: Kafka priority buffer between sensor
+and dispatch (WHITEPAPER §10.6); bjobs synchronizer for SUBMITTED→RUNNING;
+reaper for orphan recovery (§8). None of that is in this module.
 """
 from __future__ import annotations
 

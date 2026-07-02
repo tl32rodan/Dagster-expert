@@ -59,7 +59,7 @@ def _collect_upstream_data_versions(context, depends_on) -> list[str]:
     the resolved partition mappings; if the run hasn't been given inputs
     (placeholder dispatch path), fall back to an empty list — the
     idempotency_key still uniquely identifies (asset, partition), good
-    enough for §6.1.
+    enough for the §7.1 dispatch-dedup contract.
     """
     versions: list[str] = []
     try:

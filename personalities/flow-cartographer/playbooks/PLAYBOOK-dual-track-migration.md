@@ -25,6 +25,10 @@
 
 DEV 第一個動作:把本表填進 `$MIG_WORK/migration_state.yaml`(模板見 §0.2)。
 
+**Self-containment 原則**:本 playbook 對 user 的**所有**索取都集中在
+§0(參數表)與 §0.3(提供物 + 簽核點總表)。其後各 phase 不再向 user
+另行要輸入——只在 §0.3 列出的簽核點停下等裁決,其餘一路機械執行。
+
 | 參數 | 意義 | 填入值 |
 |---|---|---|
 | `FLOW_NAME` | 新 flow 名(小寫snake) | ☐ |
@@ -36,6 +40,8 @@ DEV 第一個動作:把本表填進 `$MIG_WORK/migration_state.yaml`(模板見 �
 | `GOLDEN_INPUTS` | 固定 fixture 輸入集(交叉驗證的黃金輸入) | ☐ |
 | `K_GREEN` | cutover 判準:連續全綠交叉驗證次數(建議 ≥5) | ☐ |
 | `COVERAGE_PCT` | cutover 判準:驗證覆蓋 partition 比例(建議 ≥95%) | ☐ |
+| `OWNERS_FILE` | node → 下游 script owner 對照表(tsv:`node<TAB>owner`;conformance 退件與 P6 triage 路由用) | ☐ |
+| `PG_DSN_ENV` | production status DB(Postgres)連線資訊所在的 env var 名(P6 production 雙軌用;P5 in-repo demo 走 SQLite reference,不需要) | ☐ |
 
 ```tcsh
 setenv MIG_WORK /abs/path/migration-<FLOW_NAME>
@@ -69,10 +75,41 @@ phases:
   P5: { status: TODO, evidence: }
   P6: { status: TODO, green_streak: 0 }
 escalations: []                  # P3/P4 的 ESCALATE 條目;非空則 P5 不准開工
+signoffs:                        # user 簽核;格式 {by: <id>, at: <ISO>};null = 未簽
+  cardinality: null              # 僅總 leaf 數 > 100k 需要(P1.2)
+  script_contract: null          # EXIT GATE P2 必要條件
+  escalations_cleared: null      # P5 開工必要條件(從未出現 ESCALATE 則免)
+  cutover: null                  # EXIT GATE P6 必要條件
+  refreeze: null                 # 凍結後仍需改 script 的例外同意(P0;希望永遠 null)
 ```
 
 **Resume 規則(機械)**:讀 ledger → 找第一個 `status != DONE` 的 phase
 → 從該 phase 的第一個未完成 checklist 項繼續。不要憑記憶跳段。
+
+### 0.3 User 提供物與簽核點(總表)
+
+**提供物**——除此之外,任何 phase 向 user 要輸入都算 playbook 缺陷
+(開 lessons inbox 回報):
+
+| 提供物 | 形式 | 需要時點 |
+|---|---|---|
+| §0 參數表全部欄位 | 填進 ledger `params` | 開工前 |
+| `GOLDEN_INPUTS` 黃金輸入集 | 固定 fixture;**每個 dimension 的每個值至少被一個 partition 覆蓋** | P1.3 前 |
+| node → owner 對照 | `OWNERS_FILE`(tsv) | P2 前(conformance 退件即用) |
+| schema sidecar 內容認可 | DEV 代填 `schemas/*.schema.yaml`,下游 owner 認可;production 起改由 owner 自交 | P2.2 |
+| production Postgres 連線 + psycopg2 adapter | adapter 須同 `status_db` 公開介面(WHITEPAPER §3.4);連線 env var 名填 `PG_DSN_ENV` | P6 production 雙軌前(P5 不需要) |
+| LSF 真實 queue / project 名 | 覆寫 sidecar `resources` 預設值 | P6 前 |
+
+**簽核點**——全部落在 ledger `signoffs`(格式 `{by: <id>, at: <ISO>}`),
+gate 檢查「該欄位非 null」,不接受口頭:
+
+| `signoffs.` 欄位 | 內容 | 綁定 gate |
+|---|---|---|
+| `cardinality` | 總 leaf 數 > 100k 時的分階裁決(≤100k 免簽) | P1.2 |
+| `script_contract` | SCRIPT_CONTRACT v1 全文;**特別確認:維度值編碼在 `path_template`、不進 CLI 資料參數**——與下游 owner 既有慣例衝突在此提出、在此裁決 | EXIT GATE P2 |
+| `escalations_cleared` | P3/P4 全部 ESCALATE 的裁決結果(從未出現 ESCALATE 則免簽) | P5 開工 |
+| `cutover` | 四判準達成後的最終放行 | EXIT GATE P6 |
+| `refreeze` | 凍結後仍需修改 script 的例外同意 | P0 REFUSE 補救 |
 
 ---
 
@@ -93,7 +130,7 @@ echo $PYTHONPATH                   # 預期:含 $FABRIC_ROOT
   sha256sum -c $MIG_WORK/scripts.sha256    # 預期:每行 OK
   ```
   任一行 FAILED ⇒ **REFUSE**:「script 在凍結後被改動:<路徑>。revert
-  該檔,或取得 user 明確同意後重走 P2。」
+  該檔,或取得 user 明確同意(記 ledger `signoffs.refreeze`)後重走 P2。」
 - 寫任何 `from dagster import` 之前:先讀
   `personalities/dagster-expert/skills/dagster-1.13.10-airgap/SKILL.md`
   並照 corpus 查證;0 命中 ⇒ REFUSE + 開 lessons inbox。
@@ -128,7 +165,8 @@ node × ∏(dimension 值域大小) = leaf 數;全 flow Σ = 總 leaf 數
 例:characterize × (3 pvt × 3 cell) = 9
 ```
 
-- 總 leaf 數 > 100k ⇒ **停**,回報 user 討論分階(WHITEPAPER §5.1-4)。
+- 總 leaf 數 > 100k ⇒ **停**,回報 user 討論分階(WHITEPAPER §5.1-4);
+  裁決記 ledger `signoffs.cardinality`,未簽不得進 P2。
 - 總 leaf 數就是後面所有 `N/N` 驗證的 N。
 
 ### P1.3 黃金基線(baseline)——跑兩次
@@ -172,7 +210,7 @@ wc -l $MIG_WORK/inventory_legacy.txt     # 預期:> 0
 sequential 重驗 → **FREEZE**。凍結後 script 是平台的**外部輸入**,
 平台只驗 schema、不看內容——這正是未來下游 owner 控管的形狀。
 
-### P2.1 SCRIPT_CONTRACT v1(存 `$MIG_WORK/SCRIPT_CONTRACT.md`,交 user 簽核)
+### P2.1 SCRIPT_CONTRACT v1(存 `$MIG_WORK/SCRIPT_CONTRACT.md`,交 user 簽核 → ledger `signoffs.script_contract`)
 
 1. **CLI 固定格式**:`<script> --input <abs>... --output <abs>...`。
    可重複多次;不接受其他資料性參數(維度值編碼在路徑裡,由
@@ -261,8 +299,8 @@ sha256sum -c $MIG_WORK/scripts.sha256    # 預期:每行 OK
 ```
 
 **EXIT GATE P2**:conformance 全 GREEN(`pytest $MIG_WORK/conformance -q`
-→ `N passed`)+ `scripts.sha256` 存在 + baseline 重驗完成 + user 已
-簽核 SCRIPT_CONTRACT。此後改 script = REFUSE(見 P0)。
+→ `N passed`)+ `scripts.sha256` 存在 + baseline 重驗完成 + ledger
+`signoffs.script_contract` 非 null。此後改 script = REFUSE(見 P0)。
 
 ---
 
@@ -311,7 +349,8 @@ sha256sum -c $MIG_WORK/scripts.sha256    # 預期:每行 OK
 | 失敗告警 / metadata 附掛 | KEEP → M3/OPS | harvest sensor `metadata` + RUNBOOK |
 
 **EXIT GATE P3**:matrix 每列都有 verdict;`escalations` 清單完整輸出
-給 user。**ESCALATE 未清空前,P5 不准開工**(P4 可以先做非爭議部分)。
+給 user。**P5 開工條件**:`escalations` 為空,且——若曾出現過 ESCALATE——
+ledger `signoffs.escalations_cleared` 非 null(P4 可先做非爭議部分)。
 
 ---
 
@@ -403,7 +442,8 @@ selection(每 asset 一個 job——corpus `1_13_10_RELEASE_NOTES.md`
    4. 以上皆同 ⇒ fabric bug ⇒ 開
       `personalities/flow-cartographer/memory/lessons_learned/_inbox/`。
 4. **Cutover 判準(全要滿足)**:`green_streak ≥ $K_GREEN`;驗證覆蓋
-   ≥ `$COVERAGE_PCT`% partitions;`escalations` 為空;user 簽核。
+   ≥ `$COVERAGE_PCT`% partitions;`escalations` 為空;user 簽核
+   (ledger `signoffs.cutover` 非 null)。
 5. **Cutover 後退場(§5.7 場景修正版)**:
    - 刪:legacy impl 的 scheduling/自查邏輯/檔案式進行中狀態/retry queue。
    - **保留:sequential runner——降級為驗證 oracle**,不再擔任 production

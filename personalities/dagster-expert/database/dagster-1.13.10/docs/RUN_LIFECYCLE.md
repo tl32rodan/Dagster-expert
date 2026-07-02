@@ -141,7 +141,8 @@ return dg.RunRequest(
    eventual consistency net.
 4. **Run worker death between STARTED and SUCCESS shows as STARTED in
    the run table** until `run_monitoring` reaps it. The Fabric's
-   reaper (Phase 2) handles its own status DB version of this.
+   production reaper handles its own status DB version of this
+   (WHITEPAPER §8).
 
 ## 8. Cross-reference
 
